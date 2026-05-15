@@ -3,23 +3,50 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Seed the application's database.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Create Roles
+        $superAdminRole = Role::firstOrCreate(['name' => 'super_admin']);
+        $adminFakultasRole = Role::firstOrCreate(['name' => 'admin_fakultas']);
+        $memberRole = Role::firstOrCreate(['name' => 'member']);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Super Admin
+        $superAdmin = User::updateOrCreate(
+            ['email' => 'superadmin@example.com'],
+            [
+                'name' => 'Super Admin',
+                'password' => Hash::make('password'),
+            ]
+        );
+        $superAdmin->assignRole($superAdminRole);
+
+        // Admin Fakultas
+        $adminFakultas = User::updateOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'name' => 'Admin Fakultas',
+                'password' => Hash::make('password'),
+            ]
+        );
+        $adminFakultas->assignRole($adminFakultasRole);
+
+        // Member
+        $member = User::updateOrCreate(
+            ['email' => 'member@example.com'],
+            [
+                'name' => 'Member User',
+                'password' => Hash::make('password'),
+            ]
+        );
+        $member->assignRole($memberRole);
     }
 }
