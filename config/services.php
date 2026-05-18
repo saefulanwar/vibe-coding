@@ -41,4 +41,9 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'moodle' => [
+        'url' => env('MOODLE_URL', 'http://localhost/moodle'),
+        'token' => env('MOODLE_TOKEN'),
+    ],
+
 ];

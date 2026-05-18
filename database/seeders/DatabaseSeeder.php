@@ -48,5 +48,91 @@ class DatabaseSeeder extends Seeder
             ]
         );
         $member->assignRole($memberRole);
+
+        // Seed Category
+        $category = \App\Models\Category::updateOrCreate(
+            ['slug' => 'teknologi-informasi'],
+            ['name' => 'Teknologi Informasi']
+        );
+
+        // Seed Local Course
+        $localCourse = \App\Models\Course::updateOrCreate(
+            ['slug' => 'mastering-laravel-13-dasar-hingga-mahir'],
+            [
+                'category_id' => $category->id,
+                'title' => 'Mastering Laravel 13 - Dasar hingga Mahir',
+                'description' => 'Pelajari framework PHP paling populer dari nol. Kursus mandiri ini mencakup MVC, Eloquent ORM, Filament Admin Panel, dan deployment.',
+                'price' => 150000.00,
+                'is_published' => true,
+                'source' => 'local',
+            ]
+        );
+
+        // Modules and Lessons for Local Course
+        $module1 = \App\Models\Module::updateOrCreate(
+            [
+                'course_id' => $localCourse->id,
+                'title' => 'Module 1: Instalasi & Konfigurasi',
+            ],
+            ['sort_order' => 1]
+        );
+
+        \App\Models\Lesson::updateOrCreate(
+            [
+                'module_id' => $module1->id,
+                'title' => 'Persiapan Lingkungan Kerja (PHP & Composer)',
+            ],
+            [
+                'content_text' => '<p>Di pelajaran ini, kita akan mempelajari cara menginstal <strong>PHP 8.3+</strong> dan <strong>Composer</strong> sebagai dasar pengembangan aplikasi Laravel 13.</p><p>Pastikan Anda menginstal tools berikut:</p><ul><li>PHP 8.3 ke atas</li><li>Composer versi terbaru</li><li>Visual Studio Code</li></ul>',
+                'video_url' => 'https://www.youtube.com/watch?v=IM-D67uRpeo', // Simulating a learning video
+                'sort_order' => 1,
+            ]
+        );
+
+        \App\Models\Lesson::updateOrCreate(
+            [
+                'module_id' => $module1->id,
+                'title' => 'Inisialisasi Project Laravel',
+            ],
+            [
+                'content_text' => '<p>Kita akan memulai project baru dengan menggunakan Composer. Jalankan perintah berikut di terminal Anda:</p><pre><code>composer create-project laravel/laravel vibe-learning</code></pre>',
+                'video_url' => 'https://www.youtube.com/watch?v=2n5mGqC6t-Y',
+                'sort_order' => 2,
+            ]
+        );
+
+        $module2 = \App\Models\Module::updateOrCreate(
+            [
+                'course_id' => $localCourse->id,
+                'title' => 'Module 2: Eloquent ORM & Migrations',
+            ],
+            ['sort_order' => 2]
+        );
+
+        \App\Models\Lesson::updateOrCreate(
+            [
+                'module_id' => $module2->id,
+                'title' => 'Mendesain Database Schema',
+            ],
+            [
+                'content_text' => '<p>Di bab ini kita mempelajari cara mendesain schema database secara terstruktur menggunakan Laravel Migrations dan relasi database.</p>',
+                'video_url' => null,
+                'sort_order' => 1,
+            ]
+        );
+
+        // Seed Moodle Course
+        \App\Models\Course::updateOrCreate(
+            ['slug' => 'sertifikasi-profesional-cloud-computing'],
+            [
+                'category_id' => $category->id,
+                'title' => 'Sertifikasi Profesional Cloud Computing',
+                'description' => 'Kursus tingkat lanjut tentang arsitektur Cloud Computing (AWS/GCP). Seluruh kuis, tugas akhir, dan sertifikasi didelegasikan secara seamless langsung ke LMS Moodle.',
+                'price' => 350000.00,
+                'is_published' => true,
+                'source' => 'moodle',
+                'moodle_course_id' => 101, // Mock Moodle Course ID
+            ]
+        );
     }
 }
