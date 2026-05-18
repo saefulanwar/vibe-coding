@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Order;
+use App\Models\Enrollment;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+
+class EnrollmentService
+{
+    protected MoodleService $moodleService;
+
+    public function __construct(MoodleService $moodleService)
+    {
+        $this->moodleService = $moodleService;
+    }
+
+    /**
+     * Activate access for paid order
+     */
+    public function activateOrderAccess(Order $order): void
+    {
+        $user = $order->user;
+        $course = $order->course;
+
+        // 1. Create local enrollment record
+        Enrollment::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'course_id' => $course->id,
+            ],
+            [
+                'enrolled_at' => now(),
+                'expires_at' => null, // Default lifetime access
+            ]
+        );
+
+        Log::info("Local enrollment activated for user {$user->email} on course {$course->title}");
+
+        // 2. Moodle enrollment if source is moodle
+        if ($course->source === 'moodle') {
+            try {
+                // Ensure Moodle user account exists
+                if (empty($user->moodle_user_id)) {
+                    $moodlePassword = 'P@ssw0rd' . Str::random(4) . '!';
+                    
+                    // Create Moodle Account
+                    $moodleUserId = $this->moodleService->createMoodleUser([
+                        'email' => $user->email,
+                        'name' => $user->name,
+                        'password' => $moodlePassword,
+                    ]);
+
+                    $user->update(['moodle_user_id' => $moodleUserId]);
+                    Log::info("Created Moodle user ID {$moodleUserId} for {$user->email}");
+                }
+
+                // Enroll user in Moodle Course
+                if ($course->moodle_course_id) {
+                    $this->moodleService->enrollUserInCourse(
+                        $user->moodle_user_id,
+                        $course->moodle_course_id
+                    );
+                    Log::info("Enrolled Moodle user ID {$user->moodle_user_id} in Moodle course {$course->moodle_course_id}");
+                }
+            } catch (\Exception $e) {
+                Log::error("Failed auto-enrollment to Moodle during webhook: " . $e->getMessage());
+            }
+        }
+    }
+}
