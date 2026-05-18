@@ -6,7 +6,7 @@ use App\Models\User;
 use App\Models\Course;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Section;
+use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\KeyValue;
 use Filament\Schemas\Schema;
 
