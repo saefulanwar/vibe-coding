@@ -51,10 +51,19 @@ class User extends Authenticatable
         return $this->hasMany(Enrollment::class);
     }
 
+    public function enrolledBatches()
+    {
+        return $this->belongsToMany(CourseBatch::class, 'enrollments', 'user_id', 'course_batch_id')
+            ->withPivot('enrolled_at', 'expires_at')
+            ->withTimestamps();
+    }
+
     public function enrolledCourses()
     {
-        return $this->belongsToMany(Course::class, 'enrollments')
-            ->withPivot('enrolled_at', 'expires_at')
+        return $this->belongsToMany(Course::class, 'enrollments', 'user_id', 'id')
+            ->join('course_batches', 'enrollments.course_batch_id', '=', 'course_batches.id')
+            ->join('courses', 'course_batches.course_id', '=', 'courses.id')
+            ->select('courses.*')
             ->withTimestamps();
     }
 }

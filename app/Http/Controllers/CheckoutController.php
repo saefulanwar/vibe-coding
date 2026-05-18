@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\CourseBatch;
 use App\Models\Order;
 use App\Models\Enrollment;
 use App\Services\PaymentService;
@@ -29,7 +30,7 @@ class CheckoutController extends Controller
     public function checkout(Request $request)
     {
         $request->validate([
-            'course_id' => 'required|exists:courses,id',
+            'course_batch_id' => 'required|exists:course_batches,id',
         ]);
 
         if (!Auth::check()) {
@@ -37,11 +38,23 @@ class CheckoutController extends Controller
         }
 
         $user = Auth::user();
-        $course = Course::findOrFail($request->course_id);
+        $batch = CourseBatch::findOrFail($request->course_batch_id);
+        $course = $batch->course;
+
+        // 1. Cek Batas Waktu Pendaftaran (Time Limit)
+        if (now() > $batch->registration_end_date) {
+            return redirect()->back()->with('error', 'Waktu pendaftaran angkatan ini telah berakhir.');
+        }
+
+        // 2. Cek Kuota Peserta (Capacity Limit)
+        $enrollmentsCount = Enrollment::where('course_batch_id', $batch->id)->count();
+        if ($enrollmentsCount >= $batch->quota) {
+            return redirect()->back()->with('error', 'Kuota angkatan ini sudah penuh.');
+        }
 
         // Check active enrollment
         $activeEnrollment = Enrollment::where('user_id', $user->id)
-            ->where('course_id', $course->id)
+            ->where('course_batch_id', $batch->id)
             ->where(function ($query) {
                 $query->whereNull('expires_at')
                       ->orWhere('expires_at', '>', now());
@@ -49,7 +62,7 @@ class CheckoutController extends Controller
             ->first();
 
         if ($activeEnrollment) {
-            return redirect()->route('dashboard')->with('info', 'Anda sudah terdaftar di kursus ini.');
+            return redirect()->route('dashboard')->with('info', 'Anda sudah terdaftar di angkatan ini.');
         }
 
         // Create transaction reference number
@@ -58,7 +71,7 @@ class CheckoutController extends Controller
         // Create draft Order
         $order = Order::create([
             'user_id' => $user->id,
-            'course_id' => $course->id,
+            'course_batch_id' => $batch->id,
             'reference_number' => $referenceNumber,
             'amount' => $course->price,
             'status' => 'pending',

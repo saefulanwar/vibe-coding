@@ -36,19 +36,25 @@ class Course extends Model
         return $this->hasMany(Module::class)->orderBy('sort_order');
     }
 
+    public function batches()
+    {
+        return $this->hasMany(CourseBatch::class);
+    }
+
     public function orders()
     {
-        return $this->hasMany(Order::class);
+        return $this->hasManyThrough(Order::class, CourseBatch::class);
     }
 
     public function enrollments()
     {
-        return $this->hasMany(Enrollment::class);
+        return $this->hasManyThrough(Enrollment::class, CourseBatch::class);
     }
 
     public function enrolledUsers()
     {
-        return $this->belongsToMany(User::class, 'enrollments')
+        return $this->belongsToMany(User::class, 'enrollments', 'course_batch_id', 'user_id')
+            ->whereIn('course_batch_id', $this->batches()->select('id'))
             ->withPivot('enrolled_at', 'expires_at')
             ->withTimestamps();
     }
