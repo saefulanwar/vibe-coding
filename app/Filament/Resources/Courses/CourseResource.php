@@ -7,6 +7,7 @@ use App\Filament\Resources\Courses\Pages\EditCourse;
 use App\Filament\Resources\Courses\Pages\ListCourses;
 use App\Filament\Resources\Courses\Schemas\CourseForm;
 use App\Filament\Resources\Courses\Tables\CoursesTable;
+use App\Filament\Resources\Courses\RelationManagers;
 use App\Models\Course;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -33,7 +34,9 @@ class CourseResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            RelationManagers\BatchesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

@@ -11,7 +11,7 @@ class Order extends Model
 
     protected $fillable = [
         'user_id',
-        'course_id',
+        'course_batch_id',
         'reference_number',
         'amount',
         'status',
@@ -29,8 +29,20 @@ class Order extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function courseBatch()
+    {
+        return $this->belongsTo(CourseBatch::class);
+    }
+
     public function course()
     {
-        return $this->belongsTo(Course::class);
+        return $this->hasOneThrough(
+            Course::class,
+            CourseBatch::class,
+            'id', // Foreign key on course_batches table...
+            'id', // Foreign key on courses table...
+            'course_batch_id', // Local key on orders table...
+            'course_id' // Local key on course_batches table...
+        );
     }
 }

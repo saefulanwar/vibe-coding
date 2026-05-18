@@ -103,6 +103,66 @@ class MoodleService
     }
 
     /**
+     * Create a new Group in Moodle Course
+     */
+    public function createMoodleGroup(int $moodleCourseId, string $groupName, string $description = ''): int
+    {
+        $params = [
+            'groups' => [
+                [
+                    'courseid' => $moodleCourseId,
+                    'name' => $groupName,
+                    'description' => $description,
+                ]
+            ]
+        ];
+
+        // For local testing, if Moodle URL or Token is not fully configured, return a mock ID
+        try {
+            $response = $this->call('core_group_create_groups', $params);
+
+            if (!empty($response) && isset($response[0]['id'])) {
+                return (int) $response[0]['id'];
+            }
+        } catch (Exception $e) {
+            if (config('app.env') === 'local') {
+                Log::warning('Moodle API core_group_create_groups failed in local environment. Returning mock group ID.');
+                return rand(1000, 9999);
+            }
+            throw $e;
+        }
+
+        throw new Exception('Failed to create Moodle group: Invalid API response.');
+    }
+
+    /**
+     * Add User to Moodle Group
+     */
+    public function addUserToGroup(int $moodleGroupId, int $moodleUserId): bool
+    {
+        $params = [
+            'members' => [
+                [
+                    'groupid' => $moodleGroupId,
+                    'userid' => $moodleUserId,
+                ]
+            ]
+        ];
+
+        try {
+            $this->call('core_group_add_group_members', $params);
+        } catch (Exception $e) {
+            if (config('app.env') === 'local') {
+                Log::warning('Moodle API core_group_add_group_members failed in local environment. Proceeding anyway.');
+                return true;
+            }
+            throw $e;
+        }
+        
+        return true;
+    }
+
+    /**
      * Request Single Sign-On One-Time Login URL from Moodle
      */
     public function getSsoLoginUrl(string $username): string

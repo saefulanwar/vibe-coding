@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\CourseBatch;
 use App\Models\Enrollment;
 use App\Services\MoodleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class CourseController extends Controller
 {
@@ -24,16 +26,22 @@ class CourseController extends Controller
     {
         $user = Auth::user();
         
-        // Fetch enrolled courses
-        $enrolledCourses = $user->enrolledCourses()->get();
+        // Fetch enrolled batches
+        $enrolledBatches = $user->enrolledBatches()
+            ->with(['course.category', 'course.modules.lessons'])
+            ->get();
         
-        // Fetch other available courses
-        $enrolledCourseIds = $enrolledCourses->pluck('id')->toArray();
-        $availableCourses = Course::where('is_published', true)
-            ->whereNotIn('id', $enrolledCourseIds)
+        // Fetch available batches (where user is not enrolled)
+        $enrolledBatchIds = $enrolledBatches->pluck('id')->toArray();
+        $availableBatches = CourseBatch::whereHas('course', function ($query) {
+                $query->where('is_published', true);
+            })
+            ->with(['course.category'])
+            ->withCount('enrollments')
+            ->whereNotIn('id', $enrolledBatchIds)
             ->get();
 
-        return view('dashboard', compact('enrolledCourses', 'availableCourses'));
+        return view('dashboard', compact('enrolledBatches', 'availableBatches'));
     }
 
     /**
@@ -43,17 +51,23 @@ class CourseController extends Controller
     {
         $user = Auth::user();
 
-        // Check if student has access
-        $hasAccess = Enrollment::where('user_id', $user->id)
-            ->where('course_id', $course->id)
+        // Check if student has access to any batch of this course
+        $enrollment = Enrollment::where('user_id', $user->id)
+            ->whereIn('course_batch_id', $course->batches()->pluck('id'))
             ->where(function ($query) {
                 $query->whereNull('expires_at')
                       ->orWhere('expires_at', '>', now());
             })
-            ->exists();
+            ->first();
 
-        if (!$hasAccess) {
+        if (!$enrollment) {
             return redirect()->route('dashboard')->with('error', 'Anda belum terdaftar atau tidak memiliki akses ke kursus ini.');
+        }
+
+        // Check if batch is already started
+        $batch = $enrollment->courseBatch;
+        if (now() < $batch->start_date) {
+            return redirect()->route('dashboard')->with('error', 'Kelas belum dimulai. Kelas dimulai pada: ' . $batch->start_date->format('d M Y H:i'));
         }
 
         // 1. If course is Lokal, render local learning viewer (Courses -> Modules -> Lessons)
@@ -97,17 +111,23 @@ class CourseController extends Controller
     {
         $user = Auth::user();
         
-        // Verify access
-        $hasAccess = Enrollment::where('user_id', $user->id)
-            ->where('course_id', $course->id)
+        // Verify access to a batch of this course
+        $enrollment = Enrollment::where('user_id', $user->id)
+            ->whereIn('course_batch_id', $course->batches()->pluck('id'))
             ->where(function ($query) {
                 $query->whereNull('expires_at')
                       ->orWhere('expires_at', '>', now());
             })
-            ->exists();
+            ->first();
 
-        if (!$hasAccess) {
+        if (!$enrollment) {
             return redirect()->route('dashboard')->with('error', 'Anda tidak memiliki akses ke materi ini.');
+        }
+
+        // Check if batch is already started
+        $batch = $enrollment->courseBatch;
+        if (now() < $batch->start_date) {
+            return redirect()->route('dashboard')->with('error', 'Kelas belum dimulai. Kelas dimulai pada: ' . $batch->start_date->format('d M Y H:i'));
         }
 
         $course->load(['modules.lessons']);

@@ -22,13 +22,14 @@ class EnrollmentService
     public function activateOrderAccess(Order $order): void
     {
         $user = $order->user;
-        $course = $order->course;
+        $batch = $order->courseBatch;
+        $course = $batch->course;
 
         // 1. Create local enrollment record
         Enrollment::updateOrCreate(
             [
                 'user_id' => $user->id,
-                'course_id' => $course->id,
+                'course_batch_id' => $batch->id,
             ],
             [
                 'enrolled_at' => now(),
@@ -36,7 +37,7 @@ class EnrollmentService
             ]
         );
 
-        Log::info("Local enrollment activated for user {$user->email} on course {$course->title}");
+        Log::info("Local enrollment activated for user {$user->email} on batch {$batch->name} of course {$course->title}");
 
         // 2. Moodle enrollment if source is moodle
         if ($course->source === 'moodle') {
@@ -63,6 +64,15 @@ class EnrollmentService
                         $course->moodle_course_id
                     );
                     Log::info("Enrolled Moodle user ID {$user->moodle_user_id} in Moodle course {$course->moodle_course_id}");
+
+                    // [BARU] Add user to Moodle Group if batch has moodle_group_id
+                    if ($batch->moodle_group_id) {
+                        $this->moodleService->addUserToGroup(
+                            $batch->moodle_group_id,
+                            $user->moodle_user_id
+                        );
+                        Log::info("Added Moodle user ID {$user->moodle_user_id} to Moodle Group ID {$batch->moodle_group_id}");
+                    }
                 }
             } catch (\Exception $e) {
                 Log::error("Failed auto-enrollment to Moodle during webhook: " . $e->getMessage());
