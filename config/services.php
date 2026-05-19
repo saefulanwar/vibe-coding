@@ -42,8 +42,8 @@ return [
     ],
 
     'moodle' => [
-        'url' => env('MOODLE_URL', 'http://localhost/moodle'),
-        'token' => env('MOODLE_TOKEN'),
+        'url' => env('MOODLE_BASE_URL', 'http://localhost/moodle'),
+        'token' => env('MOODLE_API_TOKEN'),
     ],
 
 ];
