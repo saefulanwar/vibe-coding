@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Users\Schemas;
 
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 
@@ -22,6 +23,13 @@ class UserForm
                 TextInput::make('password')
                     ->password()
                     ->required(),
+                Select::make('unit_id')
+                    ->label('Unit Kerja')
+                    ->relationship('unit', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->nullable()
+                    ->helperText('Kosongkan jika user bersifat global (Super Admin).'),
             ]);
     }
 }

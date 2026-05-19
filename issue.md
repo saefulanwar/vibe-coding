@@ -1,92 +1,99 @@
-# Perencanaan: Sistem Angkatan (Batching) E-Learning Hybrid
+# Perencanaan: Penambahan Entitas Unit Kerja & Scoping Data
 
-Dokumen spesifikasi teknis ini dirancang sebagai panduan implementasi komprehensif bagi developer/agen untuk membangun fitur **Sistem Angkatan (Batching)** pada platform hybrid e-learning (Laravel + Moodle). Sistem ini mengedepankan efisiensi melalui pola desain *Master-Detail* dan efisiensi manajemen LMS melalui *Moodle Groups*.
+Dokumen spesifikasi teknis ini dirancang sebagai panduan implementasi komprehensif bagi developer/agen untuk membangun fitur **Unit Kerja (Work Unit)** pada platform hybrid e-learning. Fitur ini memungkinkan desentralisasi pengelolaan kursus berdasarkan departemen atau unit kerja tertentu.
 
 ---
 
-## 1. Arsitektur Database (Konsep Master-Detail)
+## 1. Arsitektur Database & Migrasi
 
-Sistem akan memisahkan antara entitas Materi Induk (`courses`) dan Pelaksanaan Kelas (`course_batches`).
+Sistem akan menambahkan entitas baru `units` dan memodifikasi tabel `users` serta `courses` agar memiliki relasi terhadap unit.
 
-### a. Pembuatan Tabel Baru: `course_batches`
-Tabel ini merepresentasikan pelaksanaan nyata (angkatan) dari sebuah kursus master.
+### a. Pembuatan Tabel Baru: `units`
+Tabel ini merepresentasikan unit kerja yang akan bertindak sebagai entitas pengelola kursus.
 *   **Kolom Wajib:**
     *   `id` (Primary Key)
-    *   `course_id` (Foreign Key $\rightarrow$ `courses.id`, hapus secara cascade)
-    *   `name` (String, misal: "Angkatan 1 - Q3 2026")
-    *   `moodle_group_id` (Integer/Nullable, menyimpan ID Group dari Moodle API)
-    *   `quota` (Integer, jumlah maksimal peserta)
-    *   `start_date` (Datetime, tanggal kelas dimulai)
-    *   `end_date` (Datetime, tanggal kelas berakhir)
-    *   `registration_end_date` (Datetime, batas akhir pendaftaran/pembayaran)
+    *   `code` (String, unique, misal: "IT", "HRD", "MKG")
+    *   `name` (String, misal: "Information Technology", "Human Resources", "Marketing")
     *   `timestamps`
 
-### b. Pergeseran Relasi Transaksi & Hak Akses
-Struktur *checkout* tidak lagi terikat langsung ke kursus, melainkan ke angkatan.
-*   **Tabel `orders`**: Ubah kolom `course_id` menjadi `course_batch_id` (Foreign Key $\rightarrow$ `course_batches.id`).
-*   **Tabel `enrollments`**: Ubah kolom `course_id` menjadi `course_batch_id` (Foreign Key $\rightarrow$ `course_batches.id`).
-*   *Catatan Eksekusi:* Buat file *migration* baru (misal: `create_course_batches_and_modify_orders_table`) untuk:
-    1. Membuat tabel `course_batches`.
-    2. Menghapus constraint/kolom `course_id` pada tabel `orders` dan `enrollments`.
-    3. Menambahkan kolom `course_batch_id` ke tabel `orders` dan `enrollments`.
+### b. Modifikasi Tabel `users`
+Tambahkan kolom relasi ke tabel `users` untuk menandakan unit mana user (instruktur/admin unit) bernaung.
+*   **Kolom Baru:** `unit_id` (Foreign Key $\rightarrow$ `units.id`, nullable, onDelete set null).
+
+### c. Modifikasi Tabel `courses`
+Tambahkan kolom relasi ke tabel `courses` agar sistem tahu kursus tersebut merupakan milik unit mana.
+*   **Kolom Baru:** `unit_id` (Foreign Key $\rightarrow$ `units.id`, nullable, onDelete cascade/set null).
 
 ---
 
-## 2. Strategi Efisiensi Moodle (Integrasi Fitur *Groups*)
+## 2. Eloquent Model & Relasi
 
-Tujuan arsitektur ini adalah menghindari duplikasi kursus di Moodle (menghindari tumpukan kursus sampah). Satu Master Kursus di Moodle akan berisi banyak angkatan, dipisahkan secara rapi menggunakan fungsionalitas Moodle *Groups*.
+Pastikan relasi Eloquent diatur dengan benar pada model terkait:
 
-### a. MoodleService: Penambahan Fungsi API Baru
-Tambahkan *method* baru pada `App\Services\MoodleService`:
-1.  **`createMoodleGroup($moodleCourseId, $groupName)`**
-    *   Memanggil *Web Service API*: `core_group_create_groups`
-    *   Parameter: `courseid`, `name` (nama batch), `description`.
-    *   Mengembalikan: `group_id` (integer) yang selanjutnya disimpan di kolom `course_batches.moodle_group_id`.
-2.  **`addUserToGroup($moodleGroupId, $moodleUserId)`**
-    *   Memanggil *Web Service API*: `core_group_add_group_members`
-    *   Parameter: `groupids` (array yang berisi object `{ groupid, userid }`).
+1.  **Model `Unit`**:
+    *   Buat file model `App\Models\Unit`.
+    *   Relasi: `hasMany(User::class)` dan `hasMany(Course::class)`.
+    *   Kolom fillable: `code`, `name`.
 
-### b. Alur Otomatisasi (Webhooks & Filament)
-*   **Panel Admin (Pembuatan Batch)**: Saat admin menyimpan data `CourseBatch` (melalui Filament Resource/Relation Manager) untuk kursus bertipe `moodle`, jalankan *observer/action* untuk langsung menembak API `createMoodleGroup()`. Simpan respons ID ke `moodle_group_id`.
-*   **EnrollmentService (Webhook Lunas)**: Saat status `orders` menjadi `paid` / `settlement`, alur aktivasi dimodifikasi menjadi:
-    1. Buat User Moodle (jika belum ada).
-    2. Daftarkan User ke *Master Course Moodle* (via `enrol_manual_enrol_users`).
-    3. **[BARU]** Masukkan User ke dalam kelompok spesifik angkatannya dengan memanggil `addUserToGroup($batch->moodle_group_id, $moodleUserId)`. Nilai, kuis, dan diskusi otomatis terisolasi secara transparan di dalam platform Moodle.
+2.  **Model `User`**:
+    *   Tambahkan relasi: `belongsTo(Unit::class, 'unit_id')`.
+    *   Tambahkan `unit_id` ke dalam properti `$fillable`.
 
-> [!NOTE]
-> **Pengecualian untuk Kursus Lokal:**
-> Seluruh alur otomatisasi API Moodle (Pembuatan Group dan Enroll Member) pada bagian 2 ini **dilewati (di-bypass)** jika kursus tersebut memiliki tipe sumber daya `local` (`course.source == 'local'`). Bagi kursus lokal, kolom `moodle_group_id` dapat dibiarkan kosong (null).
+3.  **Model `Course`**:
+    *   Tambahkan relasi: `belongsTo(Unit::class, 'unit_id')`.
+    *   Tambahkan `unit_id` ke dalam properti `$fillable`.
 
 ---
 
-## 3. Gerbang Logika (Logic Gates) & Aturan Bisnis di Laravel
+## 3. Isolasi Data & Akses (Data Scoping)
 
-Laravel akan bertindak sebagai "satpam pintar" sebelum melempar pendaftaran ke *Payment Gateway*. **Catatan Penting:** Aturan bisnis pada bagian ini (kuota, jadwal pendaftaran, jadwal belajar) **berlaku secara universal**, baik untuk kelas `moodle` maupun kelas `local`.
+Tujuan utama dari fitur ini adalah membatasi visibilitas data (Tenant-like Scoping) agar "user sebagai unit" hanya melihat dan mengelola data miliknya sendiri.
 
-### a. Validasi Ketersediaan di `CheckoutController` (Pra-Transaksi)
-Sebelum memanggil Payment Gateway (Midtrans), sistem wajib memvalidasi parameter batch:
-1.  **Cek Batas Waktu Pendaftaran (Time Limit)**:
-    *   Logika: `now() <= $batch->registration_end_date`
-    *   Jika lewat: Transaksi ditolak secara hard-stop (Tampilkan *alert* "Waktu pendaftaran angkatan ini telah berakhir").
-2.  **Cek Kuota Peserta (Capacity Limit)**:
-    *   Hitung jumlah baris di tabel `enrollments` berdasarkan `course_batch_id`.
-    *   Logika: `enrollments_count < $batch->quota`
-    *   Jika penuh: Transaksi ditolak secara hard-stop (Tampilkan *alert* "Kuota angkatan ini sudah penuh").
+### a. Logika Hak Akses (Permissions)
+*   Role unit ini akan terhubung dengan user. Izin (permissions) spesifik antar-role akan dikelola kemudian melalui antarmuka sistem (Filament Shield di menu Roles).
+*   Pengguna dengan peran "Unit Admin" akan memiliki `unit_id` yang terisi. Pengguna Super Admin akan memiliki `unit_id` bernilai `null` yang mengartikan akses tanpa batasan (*global view*).
 
-### b. Kontrol UI Portal Siswa (`CourseController` / Dasbor)
-Pengalaman pengguna (UX) wajib disesuaikan dengan ketersediaan dan jadwal angkatan:
-*   **Penguncian Pendaftaran**: Tombol "Beli Sekarang" pada halaman katalog/kursus harus diganti dengan *badge* merah (misal: "Pendaftaran Ditutup" / "Kuota Penuh") jika validasi Pra-Transaksi (kuota atau batas waktu) gagal secara *real-time*.
-*   **Penguncian Akses Belajar (Start Learning Lock)**: Tombol "Mulai Belajar" (yang mengarah ke halaman *SSO* Moodle atau *Lesson Viewer* lokal) pada dasbor portal siswa (`/dashboard`) **hanya aktif jika jadwal kelas telah dimulai** (`now() >= $batch->start_date`). Tampilkan teks informasi "Kelas Dimulai Pada: [Tanggal]" jika waktu belajar belum tiba.
+### b. Filament Resource Scoping (Isolasi Dasbor Kursus)
+Untuk memastikan data menyesuaikan dengan unit dari user yang login, sistem perlu menerapkan filter data pada *query* utama.
+
+*   **Penerapan Scoping di `CourseResource.php`**:
+    Timpa (override) fungsi `getEloquentQuery` untuk memfilter tampilan data tabel agar khusus menampilkan milik unitnya saja:
+    ```php
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+
+        // Jika user memiliki unit_id, batasi kursus hanya untuk unit tersebut
+        if ($user && $user->unit_id) {
+            $query->where('unit_id', $user->unit_id);
+        }
+
+        return $query;
+    }
+    ```
+*   **Penerapan Pengisian Form Otomatis**:
+    Saat pembuatan kursus (`CreateCourse.php`), sistem secara implisit (*hidden*) menyematkan `unit_id` dari pengguna yang sedang login. Jika pengguna login adalah Super Admin (`unit_id` null), barulah sistem menampilkan komponen `Select::make('unit_id')` untuk menugaskan kursus tersebut ke unit tertentu.
 
 ---
 
-## 4. Persyaratan Eksekusi Filament Admin Panel
-1.  **Model Relational**: Pastikan Eloquent model telah di-update:
-    *   `Course` `hasMany` `CourseBatch`
-    *   `CourseBatch` `belongsTo` `Course`
-    *   `CourseBatch` `hasMany` `Order` dan `Enrollment`
-2.  **Integrasi Antarmuka Filament**:
-    *   Buat `RelationManager` (misalnya `BatchesRelationManager`) untuk dimasukkan ke dalam `CourseResource`. Dengan cara ini, Admin dapat langsung menambah, mengubah, dan menghapus *Batch* pada saat mengedit halaman Master Course, menciptakan pengalaman UI/UX yang premium dan logis.
-    *   Pastikan tabel pada `CourseBatch` Filament menampilkan persentase keterisian kursi/kuota.
+## 4. Manajemen Entitas di Filament Panel
 
-Silakan jadikan *blueprint* di atas sebagai *Source of Truth* (sumber acuan utama) untuk pengembangan tahap selanjutnya.
+Agar struktur unit ini bisa dikelola, tambahkan antarmuka (UI) berikut:
+
+1.  **`UnitResource`**:
+    *   Buat resource Filament baru khusus untuk tabel `units` (terbatas untuk Super Admin) yang memungkinkan penambahan, pengubahan, dan penghapusan unit kerja.
+2.  **Modifikasi `UserResource`**:
+    *   Tambahkan komponen form `Select::make('unit_id')->relationship('unit', 'name')` pada halaman pembuatan/edit user.
+
+---
+
+## 5. Ringkasan Tugas Implementasi (Task List)
+Panduan bertahap (step-by-step) eksekusi untuk agen/developer:
+1.  [ ] Buat migration untuk pembuatan tabel `units`.
+2.  [ ] Buat migration untuk menambahkan kolom `unit_id` ke tabel `users` dan `courses`.
+3.  [ ] Buat model `Unit` dan perbarui properti `$fillable` serta relasi pada model `User` dan `Course`.
+4.  [ ] Buat `UnitResource` di Filament untuk manajemen master data unit.
+5.  [ ] Modifikasi `UserResource` dan `CourseResource` agar mendukung input `unit_id` (dengan kondisional `hidden` berbasis role).
+6.  [ ] Terapkan fungsi `getEloquentQuery()` pada `CourseResource` untuk memastikan isolasi/scoping data antar unit kerja.
+7.  [ ] Lakukan *test database migration* dan verifikasi isolasi data.
