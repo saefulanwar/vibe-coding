@@ -11,7 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'role', 'moodle_user_id', 'provider_name', 'provider_id'])]
+#[Fillable(['name', 'email', 'password', 'role', 'moodle_user_id', 'provider_name', 'provider_id', 'unit_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -39,6 +39,11 @@ class User extends Authenticatable
     public function canBeImpersonated(): bool
     {
         return ! $this->hasRole('super_admin');
+    }
+
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class);
     }
 
     public function orders()

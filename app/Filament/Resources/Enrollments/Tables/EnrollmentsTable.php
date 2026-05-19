@@ -30,6 +30,10 @@ class EnrollmentsTable
                         'local' => 'primary',
                         default => 'gray',
                     }),
+                TextColumn::make('courseBatch.course.unit.name')
+                    ->label('Unit Kerja')
+                    ->sortable()
+                    ->placeholder('— Global —'),
                 TextColumn::make('enrolled_at')
                     ->label('Tgl. Terdaftar')
                     ->dateTime()

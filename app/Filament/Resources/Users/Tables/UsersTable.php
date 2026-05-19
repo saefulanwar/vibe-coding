@@ -20,6 +20,10 @@ class UsersTable
                 TextColumn::make('email')
                     ->label('Email address')
                     ->searchable(),
+                TextColumn::make('unit.name')
+                    ->label('Unit Kerja')
+                    ->sortable()
+                    ->placeholder('— Global —'),
                 TextColumn::make('email_verified_at')
                     ->dateTime()
                     ->sortable(),

@@ -39,6 +39,10 @@ class OrdersTable
                         'failed', 'expired' => 'danger',
                         default => 'gray',
                     }),
+                TextColumn::make('courseBatch.course.unit.name')
+                    ->label('Unit Kerja')
+                    ->sortable()
+                    ->placeholder('— Global —'),
                 TextColumn::make('created_at')
                     ->label('Tanggal')
                     ->dateTime()
