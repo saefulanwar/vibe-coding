@@ -55,51 +55,136 @@ class MoodleService
     }
 
     /**
-     * Create user in Moodle
+     * Get Moodle User by Email
      */
-    public function createMoodleUser(array $userData): int
+    public function getMoodleUserByEmail(string $email): ?int
     {
-        // Format username to comply with Moodle rules (lowercase, alphanumeric, no special characters)
-        $username = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', explode('@', $userData['email'])[0]));
-        
         $params = [
-            'users' => [
+            'criteria' => [
                 [
-                    'username' => $username,
-                    'password' => $userData['password'] ?? 'P@ssw0rd123!',
-                    'firstname' => $userData['firstname'] ?? explode(' ', $userData['name'])[0] ?? 'Student',
-                    'lastname' => $userData['lastname'] ?? explode(' ', $userData['name'])[1] ?? 'Elearning',
-                    'email' => $userData['email'],
+                    'key' => 'email',
+                    'value' => $email,
                 ]
             ]
         ];
 
-        $response = $this->call('core_user_create_users', $params);
-
-        if (!empty($response) && isset($response[0]['id'])) {
-            return (int) $response[0]['id'];
+        try {
+            // Usually core_user_get_users returns something like { "users": [ { "id": 123, ... } ] }
+            // But our call wrapper might return it directly or wrapped in an array.
+            $response = $this->call('core_user_get_users', $params);
+            
+            // If response is nested in 'users' key
+            if (isset($response['users']) && is_array($response['users']) && count($response['users']) > 0) {
+                return (int) $response['users'][0]['id'];
+            }
+            
+            // If response is the array of users directly
+            if (is_array($response) && isset($response[0]['id'])) {
+                return (int) $response[0]['id'];
+            }
+        } catch (Exception $e) {
+            Log::warning("Moodle User Get Failed: " . $e->getMessage());
         }
 
-        throw new Exception('Failed to create Moodle user: Invalid API response.');
+        return null;
     }
 
     /**
-     * Enroll user in Moodle Course
+     * Create user in Moodle (Custom Glacier API)
+     */
+    public function createMoodleUser(array $userData): int
+    {
+        if (empty($this->token)) {
+            throw new Exception('Moodle token is not configured.');
+        }
+
+        $url = rtrim($this->baseUrl, '/') . '/local/web-service/create-user-glacier.php';
+        
+        $params = [
+            'token' => $this->token,
+            'email' => $userData['email'],
+            'lastname' => $userData['lastname'] ?? explode(' ', $userData['name'])[1] ?? 'Elearning',
+            'nama' => $userData['firstname'] ?? explode(' ', $userData['name'])[0] ?? 'Student',
+            'password' => $userData['password'] ?? '',
+            'auth' => 'oauth2',
+            'idnumber' => '',
+            'kota' => '',
+            'department' => '',
+            'institution' => '',
+            'country' => 'ID',
+        ];
+
+        try {
+            $response = Http::get($url, $params);
+
+            if ($response->failed()) {
+                throw new Exception("HTTP request failed with status: " . $response->status());
+            }
+
+            $data = $response->json();
+            
+            if (is_array($data) && isset($data['id'])) {
+                return (int) $data['id'];
+            } elseif (is_array($data) && isset($data['userid'])) {
+                return (int) $data['userid'];
+            }
+            
+            // Fallback: Get user by email if creation was successful but ID isn't returned clearly
+            $moodleId = $this->getMoodleUserByEmail($userData['email']);
+            if ($moodleId) {
+                return $moodleId;
+            }
+
+            throw new Exception("Moodle API Exception: Could not determine user ID from response. Response: " . $response->body());
+        } catch (Exception $e) {
+            // For local development, mock ID
+            if (config('app.env') === 'local') {
+                Log::warning('Moodle Custom Create User failed in local environment. Returning mock user ID. Error: ' . $e->getMessage());
+                return rand(10000, 99999);
+            }
+            Log::error("Moodle Custom Create User Error: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Enroll user in Moodle Course (Custom Glacier API)
      */
     public function enrollUserInCourse(int $moodleUserId, int $moodleCourseId, int $roleId = 5): bool
     {
+        if (empty($this->token)) {
+            throw new Exception('Moodle token is not configured.');
+        }
+
+        $url = rtrim($this->baseUrl, '/') . '/local/web-service/enrol-course-glacier.php';
+
         $params = [
-            'enrolments' => [
-                [
-                    'roleid' => $roleId, // 5 = Student
-                    'userid' => $moodleUserId,
-                    'courseid' => $moodleCourseId,
-                ]
-            ]
+            'token' => $this->token,
+            'roleid' => $roleId, // 5 = Student
+            'userid' => $moodleUserId,
+            'courseid' => $moodleCourseId,
+            'timestart' => 0,
+            'timeend' => 0,
+            'suspend' => 0,
         ];
 
-        $this->call('enrol_manual_enrol_users', $params);
-        return true;
+        try {
+            $response = Http::get($url, $params);
+
+            if ($response->failed()) {
+                throw new Exception("HTTP request failed with status: " . $response->status());
+            }
+
+            return true;
+        } catch (Exception $e) {
+            // For local development
+            if (config('app.env') === 'local') {
+                Log::warning('Moodle Custom Enroll failed in local environment. Proceeding anyway. Error: ' . $e->getMessage());
+                return true;
+            }
+            Log::error("Moodle Custom Enroll Error: " . $e->getMessage());
+            throw $e;
+        }
     }
 
     /**

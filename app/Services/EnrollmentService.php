@@ -44,17 +44,24 @@ class EnrollmentService
             try {
                 // Ensure Moodle user account exists
                 if (empty($user->moodle_user_id)) {
-                    $moodlePassword = 'P@ssw0rd' . Str::random(4) . '!';
+                    // Check if user already exists in Moodle by email to avoid duplication
+                    $moodleUserId = $this->moodleService->getMoodleUserByEmail($user->email);
                     
-                    // Create Moodle Account
-                    $moodleUserId = $this->moodleService->createMoodleUser([
-                        'email' => $user->email,
-                        'name' => $user->name,
-                        'password' => $moodlePassword,
-                    ]);
+                    if (!$moodleUserId) {
+                        $moodlePassword = 'P@ssw0rd' . Str::random(4) . '!';
+                        
+                        // Create Moodle Account using custom Glacier API
+                        $moodleUserId = $this->moodleService->createMoodleUser([
+                            'email' => $user->email,
+                            'name' => $user->name,
+                            'password' => $moodlePassword,
+                        ]);
+                        Log::info("Created Moodle user ID {$moodleUserId} for {$user->email} via Glacier API");
+                    } else {
+                        Log::info("Found existing Moodle user ID {$moodleUserId} for {$user->email}");
+                    }
 
                     $user->update(['moodle_user_id' => $moodleUserId]);
-                    Log::info("Created Moodle user ID {$moodleUserId} for {$user->email}");
                 }
 
                 // Enroll user in Moodle Course
