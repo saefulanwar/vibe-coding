@@ -28,19 +28,45 @@ class MoodleService
         }
 
         $url = rtrim($this->baseUrl, '/') . '/webservice/rest/server.php';
+        
+        $postData = array_merge([
+            'wstoken' => $this->token,
+            'wsfunction' => $function,
+            'moodlewsrestformat' => 'json',
+        ], $params);
 
         try {
-            $response = Http::asForm()->post($url, array_merge([
-                'wstoken' => $this->token,
-                'wsfunction' => $function,
-                'moodlewsrestformat' => 'json',
-            ], $params));
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Expect:',
+                'Accept-Encoding: identity',
+            ]);
 
-            if ($response->failed()) {
-                throw new Exception("HTTP request failed with status: " . $response->status());
+            $result = curl_exec($ch);
+            
+            if ($result === false) {
+                $error = curl_error($ch);
+                curl_close($ch);
+                throw new Exception("cURL Error: " . $error);
+            }
+            
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode >= 400) {
+                throw new Exception("HTTP request failed with status: " . $httpCode);
             }
 
-            $data = $response->json();
+            $data = json_decode($result, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new Exception("JSON Decode Error: " . json_last_error_msg() . " | Raw: " . substr($result, 0, 100));
+            }
 
             // Moodle API errors return exception key
             if (is_array($data) && isset($data['exception'])) {
@@ -89,100 +115,65 @@ class MoodleService
         return null;
     }
 
-    /**
-     * Create user in Moodle (Custom Glacier API)
-     */
     public function createMoodleUser(array $userData): int
     {
-        if (empty($this->token)) {
-            throw new Exception('Moodle token is not configured.');
-        }
+        $nim = explode('@', $userData['email'])[0];
+        $username = strtolower($nim);
 
-        $url = rtrim($this->baseUrl, '/') . '/local/web-service/create-user-glacier.php';
-        
         $params = [
-            'token' => $this->token,
-            'email' => $userData['email'],
-            'lastname' => $userData['lastname'] ?? explode(' ', $userData['name'])[1] ?? 'Elearning',
-            'nama' => $userData['firstname'] ?? explode(' ', $userData['name'])[0] ?? 'Student',
-            'password' => $userData['password'] ?? '',
-            'auth' => 'oauth2',
-            'idnumber' => '',
-            'kota' => '',
-            'department' => '',
-            'institution' => '',
-            'country' => 'ID',
+            'users' => [
+                [
+                    'username' => $username,
+                    'password' => $userData['password'] ?? 'P@ssw0rd123!',
+                    'firstname' => $userData['name'] ?? 'Peserta Elearning',
+                    'lastname' => $userData['lastname'] ?? $nim,
+                    'email' => $userData['email'],
+                    'auth' => 'oauth2',
+                ]
+            ]
         ];
 
         try {
-            $response = Http::get($url, $params);
+            $response = $this->call('core_user_create_users', $params);
 
-            if ($response->failed()) {
-                throw new Exception("HTTP request failed with status: " . $response->status());
-            }
-
-            $data = $response->json();
-            
-            if (is_array($data) && isset($data['id'])) {
-                return (int) $data['id'];
-            } elseif (is_array($data) && isset($data['userid'])) {
-                return (int) $data['userid'];
+            if (!empty($response) && isset($response[0]['id'])) {
+                return (int) $response[0]['id'];
             }
             
-            // Fallback: Get user by email if creation was successful but ID isn't returned clearly
+            // Fallback: Get user by email if creation was successful but ID isn't clearly returned
             $moodleId = $this->getMoodleUserByEmail($userData['email']);
+
             if ($moodleId) {
                 return $moodleId;
             }
 
-            throw new Exception("Moodle API Exception: Could not determine user ID from response. Response: " . $response->body());
+            throw new Exception("Moodle API Exception: Could not determine user ID from response.");
         } catch (Exception $e) {
-            // For local development, mock ID
-            if (config('app.env') === 'local') {
-                Log::warning('Moodle Custom Create User failed in local environment. Returning mock user ID. Error: ' . $e->getMessage());
-                return rand(10000, 99999);
-            }
-            Log::error("Moodle Custom Create User Error: " . $e->getMessage());
+            Log::error("Moodle Create User Error: " . $e->getMessage());
             throw $e;
         }
     }
 
-    /**
-     * Enroll user in Moodle Course (Custom Glacier API)
-     */
     public function enrollUserInCourse(int $moodleUserId, int $moodleCourseId, int $roleId = 5): bool
     {
-        if (empty($this->token)) {
-            throw new Exception('Moodle token is not configured.');
-        }
-
-        $url = rtrim($this->baseUrl, '/') . '/local/web-service/enrol-course-glacier.php';
-
         $params = [
-            'token' => $this->token,
-            'roleid' => $roleId, // 5 = Student
-            'userid' => $moodleUserId,
-            'courseid' => $moodleCourseId,
-            'timestart' => 0,
-            'timeend' => 0,
-            'suspend' => 0,
+            'enrolments' => [
+                [
+                    'roleid' => $roleId, // 5 = Student
+                    'userid' => $moodleUserId,
+                    'courseid' => $moodleCourseId,
+                    'timestart' => 0,
+                    'timeend' => 0,
+                    'suspend' => 0,
+                ]
+            ]
         ];
 
         try {
-            $response = Http::get($url, $params);
-
-            if ($response->failed()) {
-                throw new Exception("HTTP request failed with status: " . $response->status());
-            }
-
+            $this->call('enrol_manual_enrol_users', $params);
             return true;
         } catch (Exception $e) {
-            // For local development
-            if (config('app.env') === 'local') {
-                Log::warning('Moodle Custom Enroll failed in local environment. Proceeding anyway. Error: ' . $e->getMessage());
-                return true;
-            }
-            Log::error("Moodle Custom Enroll Error: " . $e->getMessage());
+            Log::error("Moodle Enroll Error: " . $e->getMessage());
             throw $e;
         }
     }
@@ -210,10 +201,7 @@ class MoodleService
                 return (int) $response[0]['id'];
             }
         } catch (Exception $e) {
-            if (config('app.env') === 'local') {
-                Log::warning('Moodle API core_group_create_groups failed in local environment. Returning mock group ID.');
-                return rand(1000, 9999);
-            }
+            Log::error("Moodle Create Group Error: " . $e->getMessage());
             throw $e;
         }
 
@@ -237,10 +225,7 @@ class MoodleService
         try {
             $this->call('core_group_add_group_members', $params);
         } catch (Exception $e) {
-            if (config('app.env') === 'local') {
-                Log::warning('Moodle API core_group_add_group_members failed in local environment. Proceeding anyway.');
-                return true;
-            }
+            Log::error("Moodle Add User To Group Error: " . $e->getMessage());
             throw $e;
         }
         
