@@ -8,7 +8,7 @@ use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
-    return redirect()->route('dashboard');
+    return redirect('/dashboard');
 });
 
 // Google SSO Routes

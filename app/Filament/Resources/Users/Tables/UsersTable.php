@@ -24,6 +24,8 @@ class UsersTable
                     ->label('Unit Kerja')
                     ->sortable()
                     ->placeholder('— Global —'),
+                TextColumn::make('roles.name')
+                    ->badge(),
                 TextColumn::make('email_verified_at')
                     ->dateTime()
                     ->sortable(),

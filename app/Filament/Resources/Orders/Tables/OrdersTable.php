@@ -49,7 +49,9 @@ class OrdersTable
                     ->sortable(),
             ])
             ->filters([
-                //
+                \Filament\Tables\Filters\SelectFilter::make('unit')
+                    ->label('Filter Unit')
+                    ->relationship('courseBatch.course.unit', 'name')
             ])
             ->recordActions([
                 EditAction::make(),

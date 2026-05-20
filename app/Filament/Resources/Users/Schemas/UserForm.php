@@ -30,6 +30,11 @@ class UserForm
                     ->preload()
                     ->nullable()
                     ->helperText('Kosongkan jika user bersifat global (Super Admin).'),
+                Select::make('roles')
+                    ->relationship('roles', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->searchable(),
             ]);
     }
 }
