@@ -23,16 +23,6 @@ class SocialiteController extends Controller
             return redirect('/admin/login')->withErrors(['email' => 'Gagal terhubung dengan Google.']);
         }
 
-        $allowedDomain = env('SSO_ALLOWED_DOMAIN', '@perusahaan.com');
-
-        // Validasi Domain Email
-        if (!Str::endsWith($googleUser->email, $allowedDomain)) {
-            // Tolak akses jika domain tidak sesuai
-            return redirect('/admin/login')->withErrors([
-                'email' => "Akses ditolak. Harap gunakan email dengan domain {$allowedDomain}."
-            ]);
-        }
-
         // Cari atau buat user (Auto-Register)
         $user = User::where('email', $googleUser->email)
                     ->orWhere('provider_id', $googleUser->id)
@@ -49,7 +39,7 @@ class SocialiteController extends Controller
             ]);
 
             // Assign role otomatis menggunakan Spatie Permission
-            $defaultRole = env('SSO_DEFAULT_ROLE', 'panel_user');
+            $defaultRole = env('SSO_DEFAULT_ROLE', 'member');
             if ($defaultRole) {
                 $user->assignRole($defaultRole);
             }
@@ -63,8 +53,12 @@ class SocialiteController extends Controller
             }
         }
 
-        // Autentikasi user dan redirect ke panel Filament
+        // Autentikasi user dan redirect
         Auth::login($user);
+        
+        if ($user->hasRole('member')) {
+            return redirect('/dashboard');
+        }
         
         return redirect()->intended(route('filament.admin.pages.dashboard'));
     }
