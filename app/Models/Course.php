@@ -11,6 +11,7 @@ class Course extends Model
 
     protected $fillable = [
         'category_id',
+        'unit_id',
         'title',
         'slug',
         'thumbnail',
@@ -29,6 +30,11 @@ class Course extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class);
     }
 
     public function modules()

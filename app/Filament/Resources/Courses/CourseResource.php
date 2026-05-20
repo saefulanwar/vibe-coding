@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class CourseResource extends Resource
 {
@@ -30,6 +31,22 @@ class CourseResource extends Resource
     public static function table(Table $table): Table
     {
         return CoursesTable::configure($table);
+    }
+
+    /**
+     * Scope query to only show courses belonging to the logged-in user's unit.
+     * Super Admins (unit_id = null) see everything.
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+
+        if ($user && $user->unit_id) {
+            $query->where('unit_id', $user->unit_id);
+        }
+
+        return $query;
     }
 
     public static function getRelations(): array

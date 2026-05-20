@@ -6,6 +6,7 @@ use App\Models\Category;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\RichEditor;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Placeholder;
@@ -16,6 +17,8 @@ class CourseForm
 {
     public static function configure(Schema $schema): Schema
     {
+        $user = auth()->user();
+
         return $schema
             ->components([
                 Section::make('Informasi Dasar')
@@ -49,6 +52,30 @@ class CourseForm
                         Toggle::make('is_published')
                             ->label('Publikasikan Kursus')
                             ->default(false),
+                    ]),
+
+                Section::make('Pengelola Unit Kerja')
+                    ->description('Tentukan unit kerja yang bertanggung jawab atas kursus ini.')
+                    ->schema([
+                        // Super Admin: Tampilkan dropdown pilihan unit
+                        Select::make('unit_id')
+                            ->label('Unit Kerja')
+                            ->relationship('unit', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->nullable()
+                            ->helperText('Kosongkan jika kursus bersifat global.')
+                            ->visible(fn () => !$user || !$user->unit_id),
+
+                        // Unit Admin: Otomatis isi unit_id dari user yang login
+                        Hidden::make('unit_id')
+                            ->default(fn () => $user?->unit_id)
+                            ->visible(fn () => $user && $user->unit_id),
+
+                        Placeholder::make('unit_info')
+                            ->label('Unit Anda')
+                            ->content(fn () => $user?->unit?->name ?? '-')
+                            ->visible(fn () => $user && $user->unit_id),
                     ]),
 
                 Section::make('Arsitektur Konten (Hybrid System)')
