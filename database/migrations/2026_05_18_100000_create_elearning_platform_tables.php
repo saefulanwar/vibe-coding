@@ -11,6 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // 0. Units Table
+        Schema::create('units', function (Blueprint $table) {
+            $table->id();
+            $table->string('code')->nullable();
+            $table->string('name');
+            $table->timestamps();
+        });
+
         // 1. Categories Table
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
@@ -22,6 +30,7 @@ return new class extends Migration
         // 2. Courses Table
         Schema::create('courses', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('unit_id')->nullable()->constrained('units')->nullOnDelete();
             $table->foreignId('category_id')->nullable()->constrained('categories')->nullOnDelete();
             $table->string('title');
             $table->string('slug')->unique();
@@ -99,5 +108,6 @@ return new class extends Migration
         Schema::dropIfExists('modules');
         Schema::dropIfExists('courses');
         Schema::dropIfExists('categories');
+        Schema::dropIfExists('units');
     }
 };

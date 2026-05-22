@@ -32,7 +32,7 @@
         this.autoplayInterval = setInterval(() => { this.next() }, 5000)
     },
     stopAutoplay() { clearInterval(this.autoplayInterval) }
-}" x-init="startAutoplay()" @mouseenter="stopAutoplay()" @mouseleave="startAutoplay()">
+}" x-init="startAutoplay()" x-on:mouseenter="stopAutoplay()" x-on:mouseleave="startAutoplay()">
 
     <!-- Slides -->
     <div class="relative h-[520px] sm:h-[560px] lg:h-[600px] overflow-hidden">
@@ -70,10 +70,10 @@
     </div>
 
     <!-- Navigation Arrows -->
-    <button @click="prev()" class="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/40 backdrop-blur-sm text-white p-3 rounded-full transition duration-300 shadow-lg">
+    <button x-on:click="prev()" class="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/40 backdrop-blur-sm text-white p-3 rounded-full transition duration-300 shadow-lg">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
     </button>
-    <button @click="next()" class="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/40 backdrop-blur-sm text-white p-3 rounded-full transition duration-300 shadow-lg">
+    <button x-on:click="next()" class="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/40 backdrop-blur-sm text-white p-3 rounded-full transition duration-300 shadow-lg">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
     </button>
 
@@ -81,7 +81,7 @@
     <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex space-x-3">
         <template x-for="(slide, index) in slides" :key="'dot-'+index">
             <button 
-                @click="currentSlide = index"
+                x-on:click="currentSlide = index"
                 :class="currentSlide === index ? 'bg-white w-8' : 'bg-white/50 w-3 hover:bg-white/80'"
                 class="h-3 rounded-full transition-all duration-300"
             ></button>
