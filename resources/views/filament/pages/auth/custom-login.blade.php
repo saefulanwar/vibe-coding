@@ -1,309 +1,308 @@
-<style>
-    .glacier-login-container {
-        background-color: #FDFDFC;
-        color: #1b1b18;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        width: 100%;
-        padding: 24px;
-        box-sizing: border-box;
-        font-family: inherit;
-    }
-    
-    .dark .glacier-login-container {
-        background-color: #0a0a0a;
-        color: #EDEDEC;
-    }
-
-    .glacier-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-        max-width: 1000px;
-        margin-bottom: 24px;
-        box-sizing: border-box;
-    }
-
-    .glacier-logo-group {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        text-decoration: none;
-    }
-
-    .glacier-logo-box {
-        width: 32px;
-        height: 32px;
-        background-color: #0284c7;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.2s;
-    }
-
-    .glacier-logo-box:hover {
-        background-color: #0369a1;
-    }
-
-    .glacier-logo-text {
-        font-weight: 700;
-        font-size: 14px;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: #0f172a;
-    }
-    
-    .dark .glacier-logo-text {
-        color: #ffffff;
-    }
-
-    .glacier-header-right {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
-
-    .glacier-home-link {
-        color: #475569;
-        text-decoration: none;
-        font-weight: 500;
-        font-size: 14px;
-        transition: color 0.2s;
-    }
-
-    .glacier-home-link:hover {
-        color: #0284c7;
-    }
-    
-    .dark .glacier-home-link {
-        color: #94a3b8;
-    }
-    .dark .glacier-home-link:hover {
-        color: #38bdf8;
-    }
-
-    /* Dropdown language switcher */
-    .glacier-dropdown {
-        position: relative;
-        display: inline-block;
-    }
-
-    .glacier-dropdown-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 12px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 500;
-        color: #334155;
-        background-color: #ffffff;
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
-    
-    .dark .glacier-dropdown-btn {
-        border-color: #334155;
-        color: #cbd5e1;
-        background-color: #1e293b;
-    }
-
-    .glacier-dropdown-btn:hover {
-        background-color: #f8fafc;
-    }
-    
-    .dark .glacier-dropdown-btn:hover {
-        background-color: #334155;
-    }
-
-    .glacier-dropdown-menu {
-        position: absolute;
-        right: 0;
-        margin-top: 8px;
-        width: 128px;
-        background-color: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        padding: 4px 0;
-        z-index: 50;
-    }
-    
-    .dark .glacier-dropdown-menu {
-        background-color: #1e293b;
-        border-color: #334155;
-    }
-
-    .glacier-dropdown-item {
-        display: block;
-        padding: 8px 16px;
-        font-size: 14px;
-        color: #334155;
-        text-decoration: none;
-        transition: background-color 0.2s;
-    }
-
-    .glacier-dropdown-item:hover {
-        background-color: #f1f5f9;
-    }
-    
-    .dark .glacier-dropdown-item {
-        color: #cbd5e1;
-    }
-    .dark .glacier-dropdown-item:hover {
-        background-color: #334155;
-    }
-
-    .glacier-dropdown-item.active {
-        font-weight: 700;
-        color: #0284c7;
-    }
-    .dark .glacier-dropdown-item.active {
-        color: #38bdf8;
-    }
-
-    .rotate-180 {
-        transform: rotate(180deg);
-    }
-
-    /* Main splitscreen card */
-    .glacier-card {
-        display: flex;
-        flex-direction: column-reverse;
-        width: 100%;
-        max-width: 1000px;
-        background-color: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        box-sizing: border-box;
-    }
-    
-    .dark .glacier-card {
-        background-color: #161615;
-        border-color: #262626;
-    }
-
-    @media (min-width: 1024px) {
-        .glacier-card {
-            flex-direction: row;
-        }
-    }
-
-    /* Left column: Login Form */
-    .glacier-form-side {
-        flex: 1;
-        padding: 24px;
-        box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    
-    @media (min-width: 1024px) {
-        .glacier-form-side {
-            padding: 48px;
-        }
-    }
-
-    .glacier-form-wrapper {
-        max-width: 400px;
-        width: 100%;
-        margin: 0 auto;
-    }
-
-    .glacier-title-group {
-        margin-bottom: 24px;
-    }
-
-    .glacier-title {
-        font-size: 24px;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 0 0 8px 0;
-    }
-    
-    .dark .glacier-title {
-        color: #ffffff;
-    }
-
-    .glacier-subtitle {
-        font-size: 14px;
-        color: #64748b;
-        margin: 0;
-    }
-    
-    .dark .glacier-subtitle {
-        color: #94a3b8;
-    }
-
-    /* Right column: Graphic Side */
-    .glacier-graphic-side {
-        flex: 1;
-        background-color: #fff2f2;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        overflow: hidden;
-        min-height: 240px;
-    }
-    
-    .dark .glacier-graphic-side {
-        background-color: #1D0002;
-    }
-    
-    @media (min-width: 1024px) {
-        .glacier-graphic-side {
-            min-height: auto;
-            width: 440px;
-            flex-shrink: 0;
-        }
-    }
-
-    .glacier-svg-bg {
-        width: 100%;
-        color: #F53003;
-    }
-    
-    .dark .glacier-svg-bg {
-        color: #F61500;
-    }
-
-    .glacier-overlay-g {
-        position: absolute;
-        inset: 0;
-        background-color: rgba(255, 242, 242, 0.4);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .dark .glacier-overlay-g {
-        background-color: rgba(29, 0, 2, 0.4);
-    }
-
-    .glacier-letter-g {
-        font-size: 120px;
-        font-weight: 900;
-        color: rgba(245, 48, 3, 0.2);
-        letter-spacing: -0.05em;
-        user-select: none;
-    }
-    
-    .dark .glacier-letter-g {
-        color: rgba(246, 21, 0, 0.2);
-    }
-</style>
-
 <div class="glacier-login-container">
+    <style>
+        .glacier-login-container {
+            background-color: #FDFDFC;
+            color: #1b1b18;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            width: 100%;
+            padding: 24px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        
+        .dark .glacier-login-container {
+            background-color: #0a0a0a;
+            color: #EDEDEC;
+        }
+
+        .glacier-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 1000px;
+            margin-bottom: 24px;
+            box-sizing: border-box;
+        }
+
+        .glacier-logo-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .glacier-logo-box {
+            width: 32px;
+            height: 32px;
+            background-color: #0284c7;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+
+        .glacier-logo-box:hover {
+            background-color: #0369a1;
+        }
+
+        .glacier-logo-text {
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #0f172a;
+        }
+        
+        .dark .glacier-logo-text {
+            color: #ffffff;
+        }
+
+        .glacier-header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .glacier-home-link {
+            color: #475569;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .glacier-home-link:hover {
+            color: #0284c7;
+        }
+        
+        .dark .glacier-home-link {
+            color: #94a3b8;
+        }
+        .dark .glacier-home-link:hover {
+            color: #38bdf8;
+        }
+
+        /* Dropdown language switcher */
+        .glacier-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .glacier-dropdown-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #334155;
+            background-color: #ffffff;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .dark .glacier-dropdown-btn {
+            border-color: #334155;
+            color: #cbd5e1;
+            background-color: #1e293b;
+        }
+
+        .glacier-dropdown-btn:hover {
+            background-color: #f8fafc;
+        }
+        
+        .dark .glacier-dropdown-btn:hover {
+            background-color: #334155;
+        }
+
+        .glacier-dropdown-menu {
+            position: absolute;
+            right: 0;
+            margin-top: 8px;
+            width: 128px;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            padding: 4px 0;
+            z-index: 50;
+        }
+        
+        .dark .glacier-dropdown-menu {
+            background-color: #1e293b;
+            border-color: #334155;
+        }
+
+        .glacier-dropdown-item {
+            display: block;
+            padding: 8px 16px;
+            font-size: 14px;
+            color: #334155;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+
+        .glacier-dropdown-item:hover {
+            background-color: #f1f5f9;
+        }
+        
+        .dark .glacier-dropdown-item {
+            color: #cbd5e1;
+        }
+        .dark .glacier-dropdown-item:hover {
+            background-color: #334155;
+        }
+
+        .glacier-dropdown-item.active {
+            font-weight: 700;
+            color: #0284c7;
+        }
+        .dark .glacier-dropdown-item.active {
+            color: #38bdf8;
+        }
+
+        .rotate-180 {
+            transform: rotate(180deg);
+        }
+
+        /* Main splitscreen card */
+        .glacier-card {
+            display: flex;
+            flex-direction: column-reverse;
+            width: 100%;
+            max-width: 1000px;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-sizing: border-box;
+        }
+        
+        .dark .glacier-card {
+            background-color: #161615;
+            border-color: #262626;
+        }
+
+        @media (min-width: 1024px) {
+            .glacier-card {
+                flex-direction: row;
+            }
+        }
+
+        /* Left column: Login Form */
+        .glacier-form-side {
+            flex: 1;
+            padding: 24px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        @media (min-width: 1024px) {
+            .glacier-form-side {
+                padding: 48px;
+            }
+        }
+
+        .glacier-form-wrapper {
+            max-width: 400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .glacier-title-group {
+            margin-bottom: 24px;
+        }
+
+        .glacier-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 8px 0;
+        }
+        
+        .dark .glacier-title {
+            color: #ffffff;
+        }
+
+        .glacier-subtitle {
+            font-size: 14px;
+            color: #64748b;
+            margin: 0;
+        }
+        
+        .dark .glacier-subtitle {
+            color: #94a3b8;
+        }
+
+        /* Right column: Graphic Side */
+        .glacier-graphic-side {
+            flex: 1;
+            background-color: #fff2f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            min-height: 240px;
+        }
+        
+        .dark .glacier-graphic-side {
+            background-color: #1D0002;
+        }
+        
+        @media (min-width: 1024px) {
+            .glacier-graphic-side {
+                min-height: auto;
+                width: 440px;
+                flex-shrink: 0;
+            }
+        }
+
+        .glacier-svg-bg {
+            width: 100%;
+            color: #F53003;
+        }
+        
+        .dark .glacier-svg-bg {
+            color: #F61500;
+        }
+
+        .glacier-overlay-g {
+            position: absolute;
+            inset: 0;
+            background-color: rgba(255, 242, 242, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .dark .glacier-overlay-g {
+            background-color: rgba(29, 0, 2, 0.4);
+        }
+
+        .glacier-letter-g {
+            font-size: 120px;
+            font-weight: 900;
+            color: rgba(245, 48, 3, 0.2);
+            letter-spacing: -0.05em;
+            user-select: none;
+        }
+        
+        .dark .glacier-letter-g {
+            color: rgba(246, 21, 0, 0.2);
+        }
+    </style>
     
     <!-- Top Header -->
     <header class="glacier-header">
