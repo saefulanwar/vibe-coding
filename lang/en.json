@@ -84,5 +84,9 @@
     "Kursus Tidak Ditemukan": "Course Not Found",
     "Kata kunci atau filter yang Anda pilih tidak cocok dengan kelas kompetensi mana pun.": "The keywords or filters you selected do not match any competency classes.",
     "Reset Semua Filter": "Reset All Filters",
-    "Saring": "Filter"
+    "Saring": "Filter",
+    "Selamat Datang Kembali": "Welcome Back",
+    "Silakan masuk ke akun Anda untuk mengakses dashboard Glacier.": "Please log in to your account to access the Glacier dashboard.",
+    "Kembali ke Beranda": "Back to Home",
+    "Masuk dengan Google": "Sign in with Google"
 }

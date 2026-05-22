@@ -18,6 +18,15 @@ Route::get('/login', function () {
     return redirect('/admin/login');
 })->name('login');
 
+// Locale Switcher Route for non-prefixed routes (e.g. admin login)
+Route::get('/change-locale/{locale}', function ($locale) {
+    if (in_array($locale, ['id', 'en'])) {
+        session(['locale' => $locale]);
+        cookie()->queue('locale', $locale, 60 * 24 * 365); // 1 year
+    }
+    return redirect()->back();
+})->name('change-locale');
+
 Route::group([
     'prefix' => LaravelLocalization::setLocale(),
     'middleware' => [ 'localeSessionRedirect', 'localizationRedirect', 'localeViewPath' ]
