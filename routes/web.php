@@ -7,9 +7,9 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Auth;
 
-Route::get('/', function () {
-    return redirect('/dashboard');
-});
+use App\Livewire\LandingPage;
+
+Route::get('/', LandingPage::class)->name('home');
 
 // Google SSO Routes
 Route::get('/auth/google', [SocialiteController::class, 'redirect'])->name('sso.google.login');

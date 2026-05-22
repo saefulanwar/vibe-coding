@@ -19,6 +19,7 @@ class Course extends Model
         'is_published',
         'source',
         'moodle_course_id',
+        'unit_id',
     ];
 
     protected $casts = [
@@ -29,6 +30,11 @@ class Course extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class);
     }
 
     public function modules()

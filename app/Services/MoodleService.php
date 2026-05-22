@@ -70,6 +70,7 @@ class MoodleService
                     'firstname' => $userData['firstname'] ?? explode(' ', $userData['name'])[0] ?? 'Student',
                     'lastname' => $userData['lastname'] ?? explode(' ', $userData['name'])[1] ?? 'Elearning',
                     'email' => $userData['email'],
+                    'auth' => 'oauth2',
                 ]
             ]
         ];
