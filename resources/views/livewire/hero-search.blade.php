@@ -5,23 +5,23 @@
     autoplayInterval: null,
     slides: [
         {
-            title: 'Tingkatkan Keahlian Anda Bersama',
-            highlight: 'Fakultas Terbaik',
-            description: 'Akses ribuan materi pembelajaran dari para ahli dan raih karir impian Anda. Temukan kursus yang tepat untuk Anda hari ini.',
+            title: @json(__('Tingkatkan Keahlian Anda Bersama')),
+            highlight: @json(__('Fakultas Terbaik')),
+            description: @json(__('Akses ribuan materi pembelajaran dari para ahli dan raih karir impian Anda. Temukan kursus yang tepat untuk Anda hari ini.')),
             image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1351&q=80',
             gradient: 'from-indigo-900/80 to-blue-900/60'
         },
         {
-            title: 'Sertifikasi Profesional dari',
-            highlight: 'Institusi Ternama',
-            description: 'Dapatkan sertifikat kompetensi yang diakui industri dan tingkatkan nilai jual Anda di dunia kerja.',
+            title: @json(__('Sertifikasi Profesional dari')),
+            highlight: @json(__('Institusi Ternama')),
+            description: @json(__('Dapatkan sertifikat kompetensi yang diakui industri dan tingkatkan nilai jual Anda di dunia kerja.')),
             image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
             gradient: 'from-slate-900/80 to-indigo-900/60'
         },
         {
-            title: 'Belajar Fleksibel Kapan Saja',
-            highlight: 'Di Mana Saja',
-            description: 'Platform hybrid yang mendukung pembelajaran daring maupun luring. Sesuaikan jadwal belajar dengan aktivitas Anda.',
+            title: @json(__('Belajar Fleksibel Kapan Saja')),
+            highlight: @json(__('Di Mana Saja')),
+            description: @json(__('Platform hybrid yang mendukung pembelajaran daring maupun luring. Sesuaikan jadwal belajar dengan aktivitas Anda.')),
             image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
             gradient: 'from-blue-900/80 to-sky-900/60'
         }
@@ -98,9 +98,9 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
-                    <input wire:model.live.debounce.300ms="search" type="text" class="flex-1 px-4 py-4 text-lg border-0 focus:ring-0 focus:outline-none placeholder-slate-400 bg-transparent" placeholder="Cari kursus, keterampilan, atau topik...">
+                    <input wire:model.live.debounce.300ms="search" type="text" class="flex-1 px-4 py-4 text-lg border-0 focus:ring-0 focus:outline-none placeholder-slate-400 bg-transparent" placeholder="{{ __('Cari kursus, keterampilan, atau topik...') }}">
                     <button class="bg-sky-600 hover:bg-sky-700 text-white px-8 py-3 rounded-xl font-semibold transition duration-300 text-sm">
-                        Cari
+                        {{ __('Cari') }}
                     </button>
                 </div>
                 
@@ -121,7 +121,14 @@
                                             @endif
                                             <div>
                                                 <div class="text-sm font-medium text-slate-900">{{ $course->title }}</div>
-                                                <div class="text-xs text-slate-500">{{ $course->category?->name ?? 'Umum' }} · Rp {{ number_format($course->price, 0, ',', '.') }}</div>
+                                                <div class="text-xs text-slate-500">
+                                                    {{ $course->category?->name ?? __('Umum') }} · 
+                                                    @if(app()->getLocale() == 'en')
+                                                        IDR {{ number_format($course->price, 0, '.', ',') }}
+                                                    @else
+                                                        Rp {{ number_format($course->price, 0, ',', '.') }}
+                                                    @endif
+                                                </div>
                                             </div>
                                         </a>
                                     </li>
@@ -129,7 +136,7 @@
                             </ul>
                         @else
                             <div class="px-4 py-6 text-center text-slate-500">
-                                Tidak ada kursus ditemukan untuk "{{ $search }}".
+                                {{ __('Tidak ada kursus ditemukan untuk ":search".', ['search' => $search]) }}
                             </div>
                         @endif
                     </div>

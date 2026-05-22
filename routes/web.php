@@ -9,8 +9,6 @@ use Illuminate\Support\Facades\Auth;
 
 use App\Livewire\LandingPage;
 
-Route::get('/', LandingPage::class)->name('home');
-
 // Google SSO Routes
 Route::get('/auth/google', [SocialiteController::class, 'redirect'])->name('sso.google.login');
 Route::get('/auth/google/callback', [SocialiteController::class, 'callback'])->name('sso.google.callback');
@@ -20,16 +18,23 @@ Route::get('/login', function () {
     return redirect('/admin/login');
 })->name('login');
 
-// Protected Student Portal routes
-Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', [CourseController::class, 'dashboard'])->name('dashboard');
-    Route::post('/checkout', [CheckoutController::class, 'checkout'])->name('checkout');
-    Route::post('/courses/{course}/learn', [CourseController::class, 'startLearning'])->name('courses.learn');
-    Route::get('/courses/{course}/lessons/{lesson}', [CourseController::class, 'showLocalLesson'])->name('lessons.show');
+Route::group([
+    'prefix' => LaravelLocalization::setLocale(),
+    'middleware' => [ 'localeSessionRedirect', 'localizationRedirect', 'localeViewPath' ]
+], function() {
+    Route::get('/', LandingPage::class)->name('home');
 
-    // Simulated sandbox payment gateway views
-    Route::get('/payment/mock/{reference}', [CheckoutController::class, 'showMockPaymentPage'])->name('payment.mock');
-    Route::post('/payment/mock/{reference}/complete', [CheckoutController::class, 'completeMockPayment'])->name('payment.complete');
+    // Protected Student Portal routes
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/dashboard', [CourseController::class, 'dashboard'])->name('dashboard');
+        Route::post('/checkout', [CheckoutController::class, 'checkout'])->name('checkout');
+        Route::post('/courses/{course}/learn', [CourseController::class, 'startLearning'])->name('courses.learn');
+        Route::get('/courses/{course}/lessons/{lesson}', [CourseController::class, 'showLocalLesson'])->name('lessons.show');
+
+        // Simulated sandbox payment gateway views
+        Route::get('/payment/mock/{reference}', [CheckoutController::class, 'showMockPaymentPage'])->name('payment.mock');
+        Route::post('/payment/mock/{reference}/complete', [CheckoutController::class, 'completeMockPayment'])->name('payment.complete');
+    });
 });
 
 // Student Logout

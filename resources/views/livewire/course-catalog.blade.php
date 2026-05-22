@@ -4,13 +4,13 @@
         <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
             <div class="text-center w-full max-w-2xl mx-auto mb-6">
                 <span class="inline-block text-xs font-bold text-sky-600 tracking-widest uppercase bg-sky-50 px-3 py-1 rounded-full shadow-sm border border-sky-100">
-                    Courses
+                    {{ __('Katalog Kursus') }}
                 </span>
                 <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight mt-3">
-                    Available Courses
+                    {{ __('Available Courses') }}
                 </h2>
                 <p class="mt-2 text-slate-600">
-                    Jelajahi berbagai materi pilihan dari kami.
+                    {{ __('Jelajahi berbagai materi pilihan dari kami.') }}
                 </p>
             </div>
         </div>
@@ -20,7 +20,7 @@
                 <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
                 </svg>
-                Filter & Urutkan
+                {{ __('Filter & Urutkan') }}
             </button>
         </div>
 
@@ -28,23 +28,23 @@
             
             <aside class="hidden lg:block w-1/4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm sticky top-24">
                 <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-100">
-                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Saring Pencarian</h3>
+                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">{{ __('Saring Pencarian') }}</h3>
                     @if($search || $selectedUnit || $priceFilter !== 'all' || $deliveryFilter !== 'all')
-                        <button wire:click="$set('search', ''); $set('selectedUnit', ''); $set('priceFilter', 'all'); $set('deliveryFilter', 'all');" class="text-xs font-semibold text-rose-600 hover:text-rose-700 transition">Reset</button>
+                        <button wire:click="$set('search', ''); $set('selectedUnit', ''); $set('priceFilter', 'all'); $set('deliveryFilter', 'all');" class="text-xs font-semibold text-rose-600 hover:text-rose-700 transition">{{ __('Reset') }}</button>
                     @endif
                 </div>
                 
                 <div class="mb-5">
-                    <label for="search" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Kata Kunci</label>
+                    <label for="search" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">{{ __('Kata Kunci') }}</label>
                     <div class="relative">
-                        <input wire:model.live.debounce.300ms="search" type="text" id="search" class="w-full text-sm pl-4 pr-10 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 transition placeholder-slate-400" placeholder="Cari judul kursus...">
+                        <input wire:model.live.debounce.300ms="search" type="text" id="search" class="w-full text-sm pl-4 pr-10 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 transition placeholder-slate-400" placeholder="{{ __('Cari judul kursus...') }}">
                     </div>
                 </div>
 
                 <div class="mb-5 border-t border-slate-100 pt-4">
-                    <label for="unit" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Unit / Fakultas</label>
+                    <label for="unit" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">{{ __('Unit / Fakultas') }}</label>
                     <select wire:model.live="selectedUnit" id="unit" class="w-full text-sm bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 transition">
-                        <option value="">Semua Unit</option>
+                        <option value="">{{ __('Semua Unit') }}</option>
                         @foreach($this->units as $unit)
                             <option value="{{ $unit->id }}">{{ $unit->name }}</option>
                         @endforeach
@@ -52,30 +52,30 @@
                 </div>
 
                 <div class="mb-5 border-t border-slate-100 pt-4">
-                    <label for="delivery" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Metode Belajar</label>
+                    <label for="delivery" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">{{ __('Metode Belajar') }}</label>
                     <select wire:model.live="deliveryFilter" id="delivery" class="w-full text-sm bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 transition">
-                        <option value="all">Semua Metode</option>
-                        <option value="local">Aplikasi Glacier</option>
-                        <option value="moodle">LMS Moodle</option>
-                        <option value="hybrid">Hybrid Learning</option>
+                        <option value="all">{{ __('Semua Metode') }}</option>
+                        <option value="local">{{ __('Aplikasi Glacier') }}</option>
+                        <option value="moodle">{{ __('LMS Moodle') }}</option>
+                        <option value="hybrid">{{ __('Hybrid Learning') }}</option>
                     </select>
                 </div>
 
                 <div class="mb-5 border-t border-slate-100 pt-4">
-                    <label for="price" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Harga</label>
+                    <label for="price" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">{{ __('Harga') }}</label>
                     <select wire:model.live="priceFilter" id="price" class="w-full text-sm bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 transition">
-                        <option value="all">Semua Harga</option>
-                        <option value="free">Gratis</option>
-                        <option value="paid">Berbayar</option>
+                        <option value="all">{{ __('Semua Harga') }}</option>
+                        <option value="free">{{ __('Gratis') }}</option>
+                        <option value="paid">{{ __('Berbayar') }}</option>
                     </select>
                 </div>
 
                 <div class="border-t border-slate-100 pt-4">
-                    <label for="sort" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Urutkan</label>
+                    <label for="sort" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">{{ __('Urutkan') }}</label>
                     <select wire:model.live="sortBy" id="sort" class="w-full text-sm bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 transition">
-                        <option value="newest">Terbaru</option>
-                        <option value="price_asc">Harga Terendah</option>
-                        <option value="price_desc">Harga Tinggi</option>
+                        <option value="newest">{{ __('Terbaru') }}</option>
+                        <option value="price_asc">{{ __('Harga Terendah') }}</option>
+                        <option value="price_desc">{{ __('Harga Tinggi') }}</option>
                     </select>
                 </div>
             </aside>
@@ -109,7 +109,7 @@
                                         <div class="flex items-center gap-1.5 mb-2">
                                             <span class="text-xs font-bold text-amber-500 uppercase tracking-wide">{{ $batch->name }}</span>
                                             <span class="text-slate-300 text-xs">•</span>
-                                            <span class="text-xs text-slate-500">Umum</span>
+                                            <span class="text-xs text-slate-500">{{ __('Umum') }}</span>
                                         </div>
 
                                         <h3 class="text-base font-bold text-slate-900 mb-1 group-hover:text-sky-600 transition duration-150 leading-snug min-h-[2.75rem] line-clamp-2">
@@ -119,47 +119,62 @@
                                         <div class="flex flex-wrap items-center gap-1.5 mb-3">
                                             @if($batch->course->source === 'local')
                                                 <span class="inline-flex items-center gap-1 text-[10px] font-bold text-sky-700 bg-sky-50 border border-sky-200/60 px-2 py-0.5 rounded-md shadow-2xs">
-                                                    <span class="w-1 h-1 rounded-full bg-sky-500 animate-pulse"></span> Aplikasi Glacier
+                                                    <span class="w-1 h-1 rounded-full bg-sky-500 animate-pulse"></span> {{ __('Aplikasi Glacier') }}
                                                 </span>
                                             @elseif($batch->course->source === 'moodle')
                                                 <span class="inline-flex items-center gap-1 text-[10px] font-bold text-orange-700 bg-orange-50 border border-orange-200/60 px-2 py-0.5 rounded-md shadow-2xs">
-                                                    <span class="w-1 h-1 rounded-full bg-orange-500"></span> LMS Moodle
+                                                    <span class="w-1 h-1 rounded-full bg-orange-500"></span> {{ __('LMS Moodle') }}
                                                 </span>
                                             @elseif($batch->course->source === 'hybrid')
                                                 <span class="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 rounded-md shadow-2xs">
-                                                    <span class="w-1 h-1 rounded-full bg-indigo-500"></span> Hybrid Learning
+                                                    <span class="w-1 h-1 rounded-full bg-indigo-500"></span> {{ __('Hybrid Learning') }}
                                                 </span>
                                             @endif
                                         </div>
 
-                                        <div class="text-xs text-slate-500 mb-5 line-clamp-3 leading-relaxed min-h-[3rem]">
+                                        <div class="text-xs text-slate-500 mb-5 leading-relaxed min-h-[3rem]">
                                             @if($batch->course->description)
-                                                {!! Str::limit(strip_tags($batch->course->description), 120, '...') !!}
+                                                <div class="line-clamp-3">
+                                                    {!! Str::limit(strip_tags($batch->course->description), 120, '...') !!}
+                                                </div>
                                             @else
-                                                Informasi silabus dan pokok bahasan materi perkuliahan belum diisi oleh unit.
+                                                <div class="line-clamp-3">
+                                                    {{ __('Informasi silabus dan pokok bahasan materi perkuliahan belum diisi oleh unit.') }}
+                                                </div>
+                                            @endif
+                                            
+                                            <!-- Clean Fallback System footnote for English readers -->
+                                            @if(app()->getLocale() == 'en')
+                                                <div class="mt-2 text-[10px] text-slate-400 italic">
+                                                    * {{ __('Content only available in Indonesian.') }}
+                                                </div>
                                             @endif
                                         </div>
                                     </div>
                                     
                                     <div class="pt-4 border-t border-slate-100 flex items-center justify-between gap-2 mt-auto">
                                         <div>
-                                            <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-none">Investasi</span>
+                                            <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-none">{{ __('Investasi') }}</span>
                                             <div class="font-extrabold text-base text-slate-900 mt-1">
                                                 @if($batch->course->price == 0)
-                                                    <span class="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded text-xs border border-emerald-200/50">Gratis</span>
+                                                    <span class="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded text-xs border border-emerald-200/50">{{ __('Gratis') }}</span>
                                                 @else
-                                                    Rp {{ number_format($batch->course->price, 0, ',', '.') }}
+                                                    @if(app()->getLocale() == 'en')
+                                                        IDR {{ number_format($batch->course->price, 0, '.', ',') }}
+                                                    @else
+                                                        Rp {{ number_format($batch->course->price, 0, ',', '.') }}
+                                                    @endif
                                                 @endif
                                             </div>
                                         </div>
                                         
                                         <a href="{{ route('login') }}" class="inline-flex items-center justify-center bg-slate-900 hover:bg-sky-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition duration-200 group-hover:shadow-md">
-                                            Daftar Kelas
+                                            {{ __('Daftar Kelas') }}
                                         </a>
                                     </div>
                                 </div>
 
-                            </div>
+                             </div>
                         @endforeach
                     </div>
                     
@@ -173,10 +188,10 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                         </div>
-                        <h3 class="text-base font-bold text-slate-900 mb-1">Kursus Tidak Ditemukan</h3>
-                        <p class="text-xs text-slate-500 mb-6 max-w-xs mx-auto">Kata kunci atau filter yang Anda pilih tidak cocok dengan kelas kompetensi mana pun.</p>
+                        <h3 class="text-base font-bold text-slate-900 mb-1">{{ __('Kursus Tidak Ditemukan') }}</h3>
+                        <p class="text-xs text-slate-500 mb-6 max-w-xs mx-auto">{{ __('Kata kunci atau filter yang Anda pilih tidak cocok dengan kelas kompetensi mana pun.') }}</p>
                         <button wire:click="$set('search', ''); $set('selectedUnit', ''); $set('priceFilter', 'all'); $set('deliveryFilter', 'all');" class="inline-flex items-center justify-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition shadow-sm">
-                            Reset Semua Filter
+                            {{ __('Reset Semua Filter') }}
                         </button>
                     </div>
                 @endif
@@ -192,40 +207,40 @@
                 <div class="pointer-events-auto w-screen max-w-sm" x-show="mobileFilterOpen" x-transition:enter="transform transition ease-in-out duration-300" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transform transition ease-in-out duration-300" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full">
                     <div class="flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl">
                         <div class="px-4 sm:px-6 flex items-center justify-between pb-4 border-b border-slate-100">
-                            <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Filter Pencarian</h2>
+                            <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">{{ __('Saring Pencarian') }}</h2>
                             <button @click="mobileFilterOpen = false" class="rounded-md text-slate-400 hover:text-slate-500 p-1 bg-slate-50">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </button>
                         </div>
                         <div class="relative mt-6 flex-1 px-4 sm:px-6 space-y-5">
                             <div>
-                                <label for="m-search" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Kata Kunci</label>
-                                <input wire:model.live.debounce.300ms="search" type="text" id="m-search" class="w-full text-sm px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl" placeholder="Cari...">
+                                <label for="m-search" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">{{ __('Kata Kunci') }}</label>
+                                <input wire:model.live.debounce.300ms="search" type="text" id="m-search" class="w-full text-sm px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl" placeholder="{{ __('Cari') }}...">
                             </div>
                             <div>
-                                <label for="m-unit" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Unit</label>
+                                <label for="m-unit" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">{{ __('Unit / Fakultas') }}</label>
                                 <select wire:model.live="selectedUnit" id="m-unit" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">
-                                    <option value="">Semua Unit</option>
+                                    <option value="">{{ __('Semua Unit') }}</option>
                                     @foreach($this->units as $unit)
                                         <option value="{{ $unit->id }}">{{ $unit->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
                             <div>
-                                <label for="m-delivery" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Metode Belajar</label>
+                                <label for="m-delivery" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">{{ __('Metode Belajar') }}</label>
                                 <select wire:model.live="deliveryFilter" id="m-delivery" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">
-                                    <option value="all">Semua Metode</option>
-                                    <option value="local">Aplikasi Glacier</option>
-                                    <option value="moodle">LMS Moodle</option>
-                                    <option value="hybrid">Hybrid Learning</option>
+                                    <option value="all">{{ __('Semua Metode') }}</option>
+                                    <option value="local">{{ __('Aplikasi Glacier') }}</option>
+                                    <option value="moodle">{{ __('LMS Moodle') }}</option>
+                                    <option value="hybrid">{{ __('Hybrid Learning') }}</option>
                                 </select>
                             </div>
                             <div>
-                                <label for="m-price" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Harga</label>
+                                <label for="m-price" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">{{ __('Harga') }}</label>
                                 <select wire:model.live="priceFilter" id="m-price" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">
-                                    <option value="all">Semua Harga</option>
-                                    <option value="free">Gratis</option>
-                                    <option value="paid">Berbayar</option>
+                                    <option value="all">{{ __('Semua Harga') }}</option>
+                                    <option value="free">{{ __('Gratis') }}</option>
+                                    <option value="paid">{{ __('Berbayar') }}</option>
                                 </select>
                             </div>
                         </div>

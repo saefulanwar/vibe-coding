@@ -12,6 +12,7 @@
         "laravel/framework": "^13.8",
         "laravel/socialite": "^5.27",
         "laravel/tinker": "^3.0",
+        "mcamara/laravel-localization": "^2.4",
         "stechstudio/filament-impersonate": "^5.4"
     },
     "require-dev": {
