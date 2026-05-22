@@ -1,77 +1,59 @@
-# Issue: Pembuatan Landing Page Interaktif dengan Tailwind CSS dan Livewire
+# Issue: Implementasi Multi-Bahasa (i18n) pada Aplikasi
 
 ## Deskripsi Tugas
-Dengan menggunakan Tailwind CSS (untuk UI modern dan responsif) dan Laravel Livewire (untuk interaktivitas real-time tanpa reload halaman), kita akan membuat landing page yang sangat interaktif dan ringan untuk aplikasi platform kursus multi-unit.
+Tugas ini bertujuan untuk mengimplementasikan fitur multi-bahasa (Indonesia dan Inggris) pada aplikasi. Dokumen ini dirancang sebagai panduan teknis komprehensif yang siap dieksekusi oleh tim pengembang (Junior Programmer / Model LLM).
 
-Dokumen ini dirancang sebagai panduan teknis yang siap dieksekusi oleh programmer atau model LLM pengembang.
+### 1. UI/UX Pemilih Bahasa (Language Switcher)
+- **Gunakan Nama Bahasa, Bukan Bendera**: Jangan gunakan bendera negara (seperti 🇲🇨 atau 🇬🇧) untuk ikon pemilih bahasa. Bendera merepresentasikan negara, bukan bahasa (Bahasa Inggris digunakan di UK, USA, Australia, dll). Gunakan teks ringkas yang jelas seperti `ID` dan `EN` atau `Indonesia` dan `English`.
+- **Lokasi yang Konsisten**: Tempatkan tombol *language switcher* di pojok kanan atas navbar pada tampilan desktop, dan di bagian paling atas atau bawah menu *hamburger* pada tampilan *mobile*.
+- **Persistensi Pilihan Pengguna**: Simpan pilihan bahasa terakhir pengguna menggunakan Cookie (direkomendasikan) atau Session dengan masa kedaluwarsa yang cukup lama (misal: 1 tahun). Ini memastikan pengguna tidak perlu memilih ulang bahasa dari awal saat mereka kembali esok hari.
 
----
+### 2. Struktur Rute & Optimalisasi SEO
+Untuk mendukung SEO yang optimal, konten multi-bahasa harus dipisahkan lewat URL yang jelas bagi *search engine* (seperti Google).
 
-## 🛡️ Tema & Desain Sistem (Tailwind CSS)
-**Vibe:** Profesional, Akademis, Tepercaya, namun Modern dan Bersih.
+**Pendekatan yang Dipilih: URL Prefix (Sangat Direkomendasikan)**
+- Format URL *landing page* akan menggunakan *prefix* bahasa, contoh: `domain.com/id` untuk bahasa Indonesia dan `domain.com/en` untuk bahasa Inggris.
+- **Kelebihan**: Sangat bagus untuk SEO karena Google *bot* tahu persis halaman mana yang menggunakan bahasa apa. *Hindari* penggunaan parameter session murni tanpa perubahan URL karena *bot* kesulitan merayapi (*crawling*) konten tersebut.
 
-**Palet Warna:**
-*   **Primary:** Biru Navy (`bg-slate-900` atau `bg-indigo-900`) – melambangkan kredibilitas akademis.
-*   **Secondary:** Biru Cerah/Sian (`text-sky-500`) – untuk aksen, link, dan elemen modern.
-*   **Accent:** Amber/Emas (`bg-amber-500`) – untuk tombol Call to Action (CTA) atau penanda harga/rating.
+### 3. Implementasi Teknis Dasar (Laravel Localization)
+- **Hindari Hardcoding**: Jangan pernah menulis teks mentah di file Blade.
+- **Gunakan Helper Localization**: Kumpulkan semua teks *landing page* di dalam folder `lang/` dan gunakan helper bawaan Laravel (`__('')`).
+- **Middleware Bahasa**: Buat sebuah *middleware* yang mendeteksi bahasa dari URL *prefix* atau *session* sebelum halaman dirender, lalu atur lokal aplikasi menggunakan `App::setLocale()`.
 
-**Font:** Inter atau Plus Jakarta Sans (`font-sans`) untuk keterbacaan yang tinggi.
+### 4. Penanganan Data Dinamis dari Database (Judul & Deskripsi Kursus)
+Teks statis dapat ditangani file `lang/`, tetapi data spesifik dari database (seperti dari Moodle/Filament) memerlukan penanganan khusus:
 
----
+- **Opsi A: Gunakan Package Spatie Translatable (Direkomendasikan)**: Jika sistem memegang kendali penuh atas database kursus, gunakan *package* `spatie/laravel-translatable`. Data di database akan disimpan dalam format JSON: `{"id": "Belajar Laravel", "en": "Learn Laravel"}`. Model akan otomatis mengambilkan string yang sesuai bahasa aktif.
+- **Opsi B: Sistem Fallback Bersih**: Jika data ditarik mentah-mentah dari sistem pihak ketiga (misal: Moodle) dan hanya tersedia dalam satu bahasa, tampilkan data aslinya dan berikan catatan kecil dwibahasa di bawah konten. Contoh: `* Content only available in Indonesian.`
 
-## 🧩 Arsitektur Komponen Livewire
-Untuk performa optimal, kita akan membagi landing page ini menjadi beberapa komponen Livewire terisolasi:
-
-1.  **Navbar:** Navigasi responsif + status login user.
-2.  **HeroSearch:** Bagian utama dengan search bar interaktif.
-3.  **FacultyGrid:** Menampilkan daftar fakultas/unit secara dinamis.
-4.  **CourseCatalog:** Komponen utama pencarian, filter, dan list kursus (real-time).
-
----
-
-## 📋 Cetak Biru Seksi Landing Page (Section-by-Section)
-
-### 1. Header & Navigation Bar (`Livewire/Navbar.php`)
-*   **UI (Tailwind):** `sticky top-0 backdrop-blur-md bg-white/80` (efek transparan premium saat di-scroll).
-*   **Fitur:** Logo platform, menu navigasi (Kursus, Fakultas, Tentang Kami), dan tombol dinamis: 
-    *   Jika belum login tampilkan "Masuk / Daftar"
-    *   Jika sudah login tampilkan "Ke Dashboard [Nama User]".
-
-### 2. Hero Section dengan Pencarian Instan (`Livewire/HeroSearch.php`)
-Meniru pola platform besar yang langsung menyajikan kolom pencarian besar di atas *fold*.
-*   **UI (Tailwind):** Sisi kiri berisi headline tebal: "Tingkatkan Keahlian Anda Bersama Fakultas & Unit Terbaik", sisi kanan berupa ilustrasi atau foto mahasiswa yang bersih.
-*   **Fitur Livewire:** Input pencarian menggunakan `wire:model.live="search"`. Ketika user mengetik, langsung muncul dropdown rekomendasi kursus secara real-time sebelum mereka menekan tombol cari.
-
-### 3. Statis/Materi Promosi: Keunggulan Platform
-*   **UI (Tailwind):** Grid 3 kolom (`grid grid-cols-1 md:grid-cols-3 gap-8`).
-*   **Konten:** 3 kartu yang menjelaskan mengapa harus belajar di sini (misal: Sertifikat Resmi, Instruktur Ahli dari Unit/Fakultas, Akses Selamanya).
-
-### 4. Eksibisi Fakultas / Unit (`Livewire/FacultyGrid.php`)
-Menampilkan logo dan nama-nama fakultas/unit yang mengelola kursus.
-*   **UI (Tailwind):** Efek hover card (`hover:shadow-lg hover:-translate-y-1 transition duration-300`).
-*   **Fitur Livewire:** Klik pada kartu fakultas akan otomatis mengarahkan atau men-filter katalog kursus di bawahnya untuk hanya menampilkan kursus dari unit tersebut.
-
-### 5. Katalog Kursus Interaktif (`Livewire/CourseCatalog.php`) – Core Feature
-Ini adalah bagian paling fungsional, memanfaatkan keunggulan Livewire untuk menyaring data tanpa refresh halaman.
-
-*   **Sisi Kiri (Sidebar Filter):**
-    *   Pilihan kategori/fakultas (Checkbox).
-    *   Filter harga (Gratis / Berbayar).
-    *   Urutan (Terpopuler, Terbaru, Harga Terendah).
-*   **Sisi Kanan (Grid Kursus):**
-    *   Menampilkan kartu kursus dengan informasi: Gambar mini (thumbnail), Badge Nama Unit/Fakultas (misal: "Fakultas Teknik"), Judul Kursus, Rating bintang, dan Harga.
-*   **Fitur Livewire:**
-    *   Menggunakan Computed Properties untuk query data kursus berdasarkan filter yang dipilih.
-    *   Implementasi `wire:click="loadMore"` untuk infinite scrolling atau paginasi halus.
-
-### 6. Call to Action (CTA) & Footer
-*   **UI (Tailwind):** Banner dengan latar belakang gradient gelap (`bg-gradient-to-r from-blue-900 to-indigo-900`) yang mengajak institusi/unit lain untuk bergabung atau mengajak mahasiswa mendaftar.
-*   **Footer:** Navigasi standar, hak cipta, dan media sosial dengan warna teks yang diredam (`text-slate-400`).
+### 5. Checklist Tambahan
+- **Format Mata Uang & Angka**: Lokalisasikan format angka. Jika bahasa diatur ke `EN`, format investasi kursus harus menyesuaikan (misal dari `Rp 1.500.000` menjadi `IDR 1,500,000` agar audiens internasional tidak bingung dengan tanda pemisah ribuan).
+- **Aksesibilitas & Kecepatan Gambar**: Pastikan teks alternatif (`alt=""`) pada gambar *thumbnail* juga di-set multi-bahasa untuk mendukung aksesibilitas (*screen reader*) dan *SEO image search* yang baik.
 
 ---
 
-## 🚀 Tips Implementasi Teknis (Untuk Programmer/LLM)
+## 🚀 Saran & Implementasi Terbaik Tambahan (Best Practices)
 
-1.  **Lazy Loading:** Gunakan fitur `#[Lazy]` milik Livewire v3 pada komponen `CourseCatalog` dan `FacultyGrid` agar landing page utama terbuka dalam hitungan milidetik, sementara data kursus dimuat di latar belakang.
-2.  **Alpine.js untuk UI Ringan:** Untuk interaksi mikro seperti membuka menu dropdown profil atau mobile menu hamburger, jangan gunakan Livewire. Gunakan Alpine.js (yang sudah *built-in* di Livewire) dengan `x-data="{ open: false }"` agar hemat *resource server*.
-3.  **Image Optimization:** Pastikan gambar thumbnail kursus menggunakan aspek rasio yang konsisten memakai Tailwind (`aspect-video object-cover`).
+Untuk implementasi multi-bahasa yang lebih canggih, terstandarisasi, dan mudah di- *maintain*, terapkan panduan tambahan berikut:
+
+1. **Gunakan Package `mcamara/laravel-localization`**
+   Daripada membuat konfigurasi *routing* dan *middleware* manual, sangat disarankan menggunakan *package* ini.
+   - **Keuntungan**: Otomatis menangani *routing prefix* URL (`/en/courses`, `/id/courses`).
+   - Menyediakan fitur *Language Hiding* untuk bahasa *default* (misal: Bahasa Indonesia sebagai *default* tidak perlu *prefix* `/id`, cukup `/courses`, sedangkan versi Inggris menjadi `/en/courses`). Ini meminimalisir masalah *duplicate content* di mata Google.
+
+2. **Deteksi Bahasa Otomatis (Auto-Negotiation)**
+   Aplikasi sebaiknya otomatis mengecek header `Accept-Language` dari *browser* pengunjung pertama kali. Jika OS atau browser pengunjung menggunakan bahasa Inggris, aplikasi dapat secara otomatis me- *redirect* mereka ke versi `EN`, memberikan *First Impression* yang lebih intuitif.
+
+3. **Terapkan Tag Hreflang Otomatis**
+   SEO bukan hanya soal URL. Anda wajib menambahkan tag HTML `<link rel="alternate" hreflang="x" href="..."/>` di bagian `<head>` untuk saling menautkan antar versi bahasa. (Package `mcamara` sudah menyediakan fungsi bawaan untuk ini).
+
+4. **Gunakan File JSON untuk Translasi, Bukan Array PHP**
+   Alih-alih menggunakan banyak file *array* PHP (`lang/en/messages.php`), gunakan satu file JSON besar (`lang/en.json` dan `lang/id.json`).
+   - **Keuntungan**: Mempermudah proses pencarian dan penulisan teks. Anda bisa langsung memanggil kalimat bahasa aslinya sebagai key: `__('Course Investment')`, alih-alih `__('messages.course_investment')`.
+
+5. **Tag HTML Lang Global**
+   Pastikan tag utama HTML selalu dinamis. Buka file layout utama (seperti `app.blade.php`) dan pastikan formatnya: 
+   `<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">`
+
+6. **Lokalisasi Tanggal dengan Carbon**
+   Pastikan format seperti "3 Hari yang lalu" atau "Januari 2024" menyesuaikan bahasa aktif dengan menerapkan `Carbon::setLocale(app()->getLocale());` di dalam *Service Provider*.
