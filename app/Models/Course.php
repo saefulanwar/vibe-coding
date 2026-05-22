@@ -20,6 +20,7 @@ class Course extends Model
         'is_published',
         'source',
         'moodle_course_id',
+        'unit_id',
     ];
 
     protected $casts = [

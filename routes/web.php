@@ -7,9 +7,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Auth;
 
-Route::get('/', function () {
-    return redirect('/dashboard');
-});
+use App\Livewire\LandingPage;
 
 // Google SSO Routes
 Route::get('/auth/google', [SocialiteController::class, 'redirect'])->name('sso.google.login');
@@ -20,16 +18,32 @@ Route::get('/login', function () {
     return redirect('/admin/login');
 })->name('login');
 
-// Protected Student Portal routes
-Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', [CourseController::class, 'dashboard'])->name('dashboard');
-    Route::post('/checkout', [CheckoutController::class, 'checkout'])->name('checkout');
-    Route::post('/courses/{course}/learn', [CourseController::class, 'startLearning'])->name('courses.learn');
-    Route::get('/courses/{course}/lessons/{lesson}', [CourseController::class, 'showLocalLesson'])->name('lessons.show');
+// Locale Switcher Route for non-prefixed routes (e.g. admin login)
+Route::get('/change-locale/{locale}', function ($locale) {
+    if (in_array($locale, ['id', 'en'])) {
+        session(['locale' => $locale]);
+        cookie()->queue('locale', $locale, 60 * 24 * 365); // 1 year
+    }
+    return redirect()->back();
+})->name('change-locale');
 
-    // Simulated sandbox payment gateway views
-    Route::get('/payment/mock/{reference}', [CheckoutController::class, 'showMockPaymentPage'])->name('payment.mock');
-    Route::post('/payment/mock/{reference}/complete', [CheckoutController::class, 'completeMockPayment'])->name('payment.complete');
+Route::group([
+    'prefix' => LaravelLocalization::setLocale(),
+    'middleware' => [ 'localeSessionRedirect', 'localizationRedirect', 'localeViewPath' ]
+], function() {
+    Route::get('/', LandingPage::class)->name('home');
+
+    // Protected Student Portal routes
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/dashboard', [CourseController::class, 'dashboard'])->name('dashboard');
+        Route::post('/checkout', [CheckoutController::class, 'checkout'])->name('checkout');
+        Route::post('/courses/{course}/learn', [CourseController::class, 'startLearning'])->name('courses.learn');
+        Route::get('/courses/{course}/lessons/{lesson}', [CourseController::class, 'showLocalLesson'])->name('lessons.show');
+
+        // Simulated sandbox payment gateway views
+        Route::get('/payment/mock/{reference}', [CheckoutController::class, 'showMockPaymentPage'])->name('payment.mock');
+        Route::post('/payment/mock/{reference}/complete', [CheckoutController::class, 'completeMockPayment'])->name('payment.complete');
+    });
 });
 
 // Student Logout
