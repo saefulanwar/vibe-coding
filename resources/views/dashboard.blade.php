@@ -52,11 +52,11 @@
     <nav class="glass-nav sticky top-0 z-50 py-4 px-6 md:px-12 flex justify-between items-center">
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                <span class="font-outfit font-black text-xl text-white">V</span>
+                <span class="font-outfit font-black text-xl text-white">G</span>
             </div>
             <div>
-                <h1 class="font-outfit font-bold text-lg tracking-wide text-white leading-none">VIBELEARN</h1>
-                <span class="text-[10px] tracking-widest text-indigo-400 font-semibold font-outfit uppercase">Hybrid LMS</span>
+                <h1 class="font-outfit font-bold text-lg tracking-wide text-white leading-none">GLACIER</h1>
+                <span class="text-[10px] tracking-widest text-indigo-400 font-semibold font-outfit uppercase">Global Access For Independent Learning</span>
             </div>
         </div>
         <div class="flex items-center gap-6">
@@ -99,6 +99,31 @@
             </div>
         @endif
 
+        {{-- Proactive Profile Incompleteness Banner --}}
+        @if(!Auth::user()->isProfileComplete())
+            @php $missing = Auth::user()->getMissingProfileFields(); @endphp
+            <div class="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+                <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center mt-0.5">
+                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-amber-300">Profil Anda Belum Lengkap</p>
+                    <p class="text-xs text-amber-400/70 mt-1">
+                        Data berikut masih kosong: <strong class="text-amber-300">{{ implode(', ', $missing) }}</strong>.
+                        Silakan lengkapi profil Anda agar dapat membeli atau mendaftar kursus.
+                    </p>
+                    <a href="/admin/my-profile" class="inline-flex items-center gap-1.5 mt-3 text-xs font-bold text-amber-950 bg-amber-400 hover:bg-amber-300 px-3.5 py-2 rounded-lg transition duration-200 shadow-sm active:scale-95">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                        Lengkapi Profil Sekarang
+                    </a>
+                </div>
+            </div>
+        @endif
+
         <!-- Enrolled Courses Section -->
         <section class="mb-12">
             <div class="flex items-center justify-between mb-6">
@@ -137,9 +162,9 @@
                                     <!-- Source Badge -->
                                     <div class="absolute top-3 left-3 flex gap-2">
                                         @if($course->source === 'moodle')
-                                            <span class="text-[10px] font-bold tracking-wide uppercase px-2 py-1 rounded bg-amber-500 text-slate-950 shadow-lg">Moodle LMS</span>
+                                            <span class="text-[10px] font-bold tracking-wide uppercase px-2 py-1 rounded bg-amber-500 text-slate-950 shadow-lg">Glacier LMS</span>
                                         @else
-                                            <span class="text-[10px] font-bold tracking-wide uppercase px-2 py-1 rounded bg-indigo-500 text-white shadow-lg">Local</span>
+                                            <span class="text-[10px] font-bold tracking-wide uppercase px-2 py-1 rounded bg-indigo-500 text-white shadow-lg">Glacier</span>
                                         @endif
                                     </div>
                                 </div>
@@ -163,7 +188,7 @@
                                 @if(now() >= $batch->start_date)
                                     <form action="{{ route('courses.learn', $course->id) }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="w-full text-center text-xs font-semibold py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white glow-hover flex items-center justify-center gap-2">
+                                        <button type="submit" class="w-full text-center text-xs font-semibold py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white glow-hover flex items-center justify-center gap-2 mb-2">
                                             @if($course->source === 'moodle')
                                                 <span>Mulai Belajar (SSO Moodle)</span>
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
@@ -173,6 +198,12 @@
                                             @endif
                                         </button>
                                     </form>
+                                    @if(isset($certificates[$course->id]))
+                                        <a href="{{ asset('storage/' . $certificates[$course->id]->file_path) }}" target="_blank" class="w-full text-center text-xs font-semibold py-3 px-4 rounded-xl border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 glow-hover flex items-center justify-center gap-2">
+                                            <span>Unduh Sertifikat</span>
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                        </a>
+                                    @endif
                                 @else
                                     <div class="w-full text-center text-xs font-semibold py-3 px-4 rounded-xl bg-slate-800/50 border border-slate-700/30 text-slate-400 flex flex-col items-center justify-center gap-1">
                                         <div class="flex items-center gap-1.5 text-amber-500">
@@ -217,14 +248,18 @@
                                     @endif
                                     <!-- Price Tag -->
                                     <div class="absolute bottom-3 right-3 bg-slate-950/80 backdrop-blur px-3 py-1 rounded-lg border border-slate-700/40 text-xs font-bold text-emerald-400">
-                                        Rp {{ number_format($course->price, 0, ',', '.') }}
+                                        @if($course->price == 0)
+                                            {{ __('Gratis') }}
+                                        @else
+                                            Rp {{ number_format($course->price, 0, ',', '.') }}
+                                        @endif
                                     </div>
                                     <!-- Source Badge -->
                                     <div class="absolute top-3 left-3">
                                         @if($course->source === 'moodle')
-                                            <span class="text-[10px] font-bold tracking-wide uppercase px-2 py-1 rounded bg-amber-500 text-slate-950 shadow-lg">Moodle LMS</span>
+                                            <span class="text-[10px] font-bold tracking-wide uppercase px-2 py-1 rounded bg-amber-500 text-slate-950 shadow-lg">Glacier LMS</span>
                                         @else
-                                            <span class="text-[10px] font-bold tracking-wide uppercase px-2 py-1 rounded bg-indigo-500 text-white shadow-lg">Local</span>
+                                            <span class="text-[10px] font-bold tracking-wide uppercase px-2 py-1 rounded bg-indigo-500 text-white shadow-lg">Glacier</span>
                                         @endif
                                     </div>
                                 </div>
@@ -270,10 +305,17 @@
                                     <form action="{{ route('checkout') }}" method="POST">
                                         @csrf
                                         <input type="hidden" name="course_batch_id" value="{{ $batch->id }}">
-                                        <button type="submit" class="w-full text-center text-xs font-bold py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white glow-hover flex items-center justify-center gap-2">
-                                            <span>Beli Sekarang</span>
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                                        </button>
+                                        @if($course->price == 0)
+                                            <button type="submit" class="w-full text-center text-xs font-bold py-3 px-4 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white glow-hover flex items-center justify-center gap-2">
+                                                <span>Daftar Gratis</span>
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                                            </button>
+                                        @else
+                                            <button type="submit" class="w-full text-center text-xs font-bold py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white glow-hover flex items-center justify-center gap-2">
+                                                <span>Beli Sekarang</span>
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                            </button>
+                                        @endif
                                     </form>
                                 @endif
                             </div>

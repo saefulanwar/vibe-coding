@@ -7,6 +7,8 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Auth;
 
+use App\Http\Middleware\EnsureProfileComplete;
+
 use App\Livewire\LandingPage;
 
 // Google SSO Routes
@@ -36,13 +38,17 @@ Route::group([
     // Protected Student Portal routes
     Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', [CourseController::class, 'dashboard'])->name('dashboard');
-        Route::post('/checkout', [CheckoutController::class, 'checkout'])->name('checkout');
-        Route::post('/courses/{course}/learn', [CourseController::class, 'startLearning'])->name('courses.learn');
         Route::get('/courses/{course}/lessons/{lesson}', [CourseController::class, 'showLocalLesson'])->name('lessons.show');
 
         // Simulated sandbox payment gateway views
         Route::get('/payment/mock/{reference}', [CheckoutController::class, 'showMockPaymentPage'])->name('payment.mock');
         Route::post('/payment/mock/{reference}/complete', [CheckoutController::class, 'completeMockPayment'])->name('payment.complete');
+
+        // Transaction routes: gated by profile completeness
+        Route::middleware([EnsureProfileComplete::class])->group(function () {
+            Route::post('/checkout', [CheckoutController::class, 'checkout'])->name('checkout');
+            Route::post('/courses/{course}/learn', [CourseController::class, 'startLearning'])->name('courses.learn');
+        });
     });
 });
 
@@ -57,3 +63,5 @@ Route::post('/logout', function () {
 // Webhook endpoint (CSRF-exempted in bootstrap/app.php)
 Route::post('/webhook/payment', [WebhookController::class, 'handle'])->name('payment.webhook');
 
+// Public Certificate Verification
+Route::get('/verify/{uuid}', [\App\Http\Controllers\VerifyCertificateController::class, 'show'])->name('verify.certificate');

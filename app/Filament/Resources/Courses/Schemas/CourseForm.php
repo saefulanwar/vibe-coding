@@ -9,6 +9,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\RichEditor;
 use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
 
@@ -41,11 +42,14 @@ class CourseForm
                             ->label('Harga (IDR)')
                             ->numeric()
                             ->required()
-                            ->prefix('Rp'),
-                        TextInput::make('thumbnail')
-                            ->label('URL Gambar Thumbnail')
-                            ->nullable()
-                            ->url(),
+                            ->prefix('Rp')
+                            ->helperText('Masukkan 0 jika kursus ini gratis (tidak berbayar).'),
+                        SpatieMediaLibraryFileUpload::make('thumbnail')
+                            ->label('Gambar Thumbnail')
+                            ->collection('thumbnail')
+                            ->disk('public')
+                            ->image()
+                            ->nullable(),
                         Toggle::make('is_published')
                             ->label('Publikasikan Kursus')
                             ->default(false),
@@ -95,6 +99,18 @@ class CourseForm
                         RichEditor::make('description')
                             ->label('Deskripsi Lengkap')
                             ->nullable(),
+                    ]),
+
+                Section::make('Sertifikat')
+                    ->schema([
+                        Select::make('certificate_template_id')
+                            ->label('Template Sertifikat')
+                            ->relationship('certificateTemplate', 'title')
+                            ->nullable()
+                            ->searchable(),
+                        Toggle::make('requires_tte')
+                            ->label('Gunakan Tanda Tangan Elektronik (TTE SiAgen)')
+                            ->default(true),
                     ]),
             ]);
     }

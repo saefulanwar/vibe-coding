@@ -68,6 +68,26 @@ class CheckoutController extends Controller
         // Create transaction reference number
         $referenceNumber = 'TRX-' . date('Ymd') . '-' . strtoupper(Str::random(6));
 
+        // Free Course Direct Registration
+        if ($course->price == 0) {
+            $order = Order::create([
+                'user_id' => $user->id,
+                'course_batch_id' => $batch->id,
+                'reference_number' => $referenceNumber,
+                'amount' => 0,
+                'status' => 'paid',
+                'gateway_response' => [
+                    'free' => true,
+                    'timestamp' => now()->toIso8601String(),
+                ]
+            ]);
+
+            // Auto-enroll user in course batch
+            $this->enrollmentService->activateOrderAccess($order);
+
+            return redirect()->route('dashboard')->with('success', 'Pendaftaran berhasil! Anda telah terdaftar di kelas gratis ini.');
+        }
+
         // Create draft Order
         $order = Order::create([
             'user_id' => $user->id,

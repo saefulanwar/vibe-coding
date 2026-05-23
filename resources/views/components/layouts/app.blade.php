@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{{ $title ?? 'Platform Kursus Vibe' }}</title>
+        <title>{{ $title ?? 'Global Access For Independent Learning | GLACIER UNY' }}</title>
         
         @foreach(LaravelLocalization::getSupportedLocales() as $localeCode => $properties)
             <link rel="alternate" hreflang="{{ $localeCode }}" href="{{ LaravelLocalization::getLocalizedURL($localeCode, null, [], true) }}">
