@@ -1,6 +1,35 @@
 <section id="courses" class="py-20 bg-slate-50" x-data="{ mobileFilterOpen: false }">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
+        {{-- Proactive Profile Incompleteness Banner --}}
+        @auth
+            @if(!Auth::user()->isProfileComplete())
+                @php $missing = Auth::user()->getMissingProfileFields(); @endphp
+                <div class="mb-8 relative overflow-hidden rounded-2xl border border-amber-300/50 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 p-5 shadow-sm">
+                    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNDUsMTU4LDExLDAuMSkiLz48L3N2Zz4=')] opacity-50"></div>
+                    <div class="relative flex items-start gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center border border-amber-400/30">
+                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-sm font-bold text-amber-900">Profil Anda Belum Lengkap</h4>
+                            <p class="text-sm text-amber-800/80 mt-1">
+                                Data berikut masih kosong: <strong>{{ implode(', ', $missing) }}</strong>.
+                                Silakan lengkapi profil terlebih dahulu agar dapat memilih kursus.
+                            </p>
+                            <a href="/admin/my-profile" class="inline-flex items-center gap-1.5 mt-3 text-xs font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 border border-amber-300/60 px-3.5 py-2 rounded-lg transition duration-200 active:scale-95">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                Lengkapi Profil Sekarang
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        @endauth
         <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
             <div class="text-center w-full max-w-2xl mx-auto mb-6">
                 <span class="inline-block text-xs font-bold text-sky-600 tracking-widest uppercase bg-sky-50 px-3 py-1 rounded-full shadow-sm border border-sky-100">
@@ -168,9 +197,35 @@
                                             </div>
                                         </div>
                                         
-                                        <a href="{{ route('login') }}" class="inline-flex items-center justify-center bg-slate-900 hover:bg-sky-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition duration-200 group-hover:shadow-md">
-                                            {{ __('Daftar Kelas') }}
-                                        </a>
+                                        @auth
+                                            @php
+                                                $isEnrolled = Auth::user()->enrolledBatches->contains($batch->id);
+                                            @endphp
+
+                                            @if($isEnrolled)
+                                                <a href="{{ route('dashboard') }}" class="inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl transition duration-200 shadow-sm border border-slate-200/80 active:scale-95">
+                                                    {{ __('Ke Dashboard') }}
+                                                </a>
+                                            @else
+                                                <form action="{{ route('checkout') }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <input type="hidden" name="course_batch_id" value="{{ $batch->id }}">
+                                                    @if($batch->course->price == 0)
+                                                        <button type="submit" class="inline-flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition duration-200 shadow-md border border-emerald-500/20 active:scale-95">
+                                                            {{ __('Daftar Gratis') }}
+                                                        </button>
+                                                    @else
+                                                        <button type="submit" class="inline-flex items-center justify-center bg-slate-900 hover:bg-sky-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition duration-200 group-hover:shadow-md active:scale-95">
+                                                            {{ __('Beli Sekarang') }}
+                                                        </button>
+                                                    @endif
+                                                </form>
+                                            @endif
+                                        @else
+                                            <a href="{{ route('login') }}" class="inline-flex items-center justify-center bg-slate-900 hover:bg-sky-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition duration-200 group-hover:shadow-md">
+                                                {{ __('Daftar Kelas') }}
+                                            </a>
+                                        @endauth
                                     </div>
                                 </div>
 

@@ -41,7 +41,13 @@ class CourseController extends Controller
             ->whereNotIn('id', $enrolledBatchIds)
             ->get();
 
-        return view('dashboard', compact('enrolledBatches', 'availableBatches'));
+        // Fetch user's completed certificates
+        $certificates = \App\Models\Certificate::where('user_id', $user->id)
+            ->where('status', 'completed')
+            ->get()
+            ->keyBy('course_id');
+
+        return view('dashboard', compact('enrolledBatches', 'availableBatches', 'certificates'));
     }
 
     /**

@@ -5,9 +5,28 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Course extends Model
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+
+class Course extends Model implements HasMedia
 {
-    use HasFactory;
+    use HasFactory, InteractsWithMedia;
+
+    public function getThumbnailAttribute($value)
+    {
+        return $this->getFirstMediaUrl('thumbnail') ?: $value;
+    }
+
+    public function getKey()
+    {
+        $key = parent::getKey();
+        return is_null($key) ? null : (string) $key;
+    }
+
+    public function getKeyType()
+    {
+        return 'string';
+    }
 
     protected $fillable = [
         'category_id',
@@ -21,6 +40,8 @@ class Course extends Model
         'source',
         'moodle_course_id',
         'unit_id',
+        'certificate_template_id',
+        'requires_tte',
     ];
 
     protected $casts = [
@@ -64,5 +85,10 @@ class Course extends Model
             ->whereIn('course_batch_id', $this->batches()->select('id'))
             ->withPivot('enrolled_at', 'expires_at')
             ->withTimestamps();
+    }
+
+    public function certificateTemplate()
+    {
+        return $this->belongsTo(CertificateTemplate::class, 'certificate_template_id');
     }
 }

@@ -101,10 +101,14 @@
                                                 <div class="text-sm font-medium text-slate-900">{{ $course->title }}</div>
                                                 <div class="text-xs text-slate-500">
                                                     {{ $course->category?->name ?? __('Umum') }} · 
-                                                    @if(app()->getLocale() == 'en')
-                                                        IDR {{ number_format($course->price, 0, '.', ',') }}
+                                                    @if($course->price == 0)
+                                                        <span class="text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] border border-emerald-200/50">{{ __('Gratis') }}</span>
                                                     @else
-                                                        Rp {{ number_format($course->price, 0, ',', '.') }}
+                                                        @if(app()->getLocale() == 'en')
+                                                            IDR {{ number_format($course->price, 0, '.', ',') }}
+                                                        @else
+                                                            Rp {{ number_format($course->price, 0, ',', '.') }}
+                                                        @endif
                                                     @endif
                                                 </div>
                                             </div>

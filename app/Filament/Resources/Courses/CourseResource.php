@@ -54,6 +54,7 @@ class CourseResource extends Resource
         return [
             RelationManagers\BatchesRelationManager::class,
             RelationManagers\ModulesRelationManager::class,
+            RelationManagers\EnrollmentsRelationManager::class,
         ];
     }
 
