@@ -42,8 +42,18 @@ return [
     ],
 
     'moodle' => [
-        'url' => env('MOODLE_URL', 'http://localhost/moodle'),
-        'token' => env('MOODLE_TOKEN'),
+        'url' => env('MOODLE_BASE_URL', env('MOODLE_URL', 'http://localhost/moodle')),
+        'token' => env('MOODLE_API_TOKEN', env('MOODLE_TOKEN')),
+    ],
+
+    'siagen' => [
+        'base_url' => env('SIAGEN_BASE_URL', 'https://siagen.uny.ac.id'),
+        'api_key' => env('SIAGEN_API_KEY', 'Lw_oJ3KQomQnh_eT29Ep9Li3ybDpiPrY'),
+        'ttd_id' => env('SIAGEN_TTD_ID', 1),
+        'keamanan_id' => env('SIAGEN_KEAMANAN_ID', 4),
+        'kodesuratid' => env('SIAGEN_KODESURATID', 613),
+        'jenis_surat_id' => env('SIAGEN_JENIS_SURAT_ID', 27),
+        'signer_email' => env('SIAGEN_SIGNER_EMAIL', 'dummy@dummy.com'),
     ],
 
 ];

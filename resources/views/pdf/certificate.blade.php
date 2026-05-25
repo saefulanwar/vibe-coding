@@ -22,7 +22,7 @@
         
         <div class="text-center mt-12">
             <p class="text-sm tracking-widest text-slate-500 uppercase font-semibold">Sertifikat Kelulusan</p>
-            <p class="text-xs text-slate-400 mt-1">Nomor: CERT-{{ $uuid }}</p>
+            <p class="text-xs text-slate-400 mt-1">Nomor: {{ $siagen_nomor ?? 'CERT-' . $uuid }}</p>
         </div>
 
         <div class="text-center flex-grow flex flex-col justify-center px-20">
