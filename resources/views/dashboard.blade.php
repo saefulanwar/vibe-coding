@@ -64,8 +64,8 @@
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span class="text-xs text-slate-400 font-medium">Siswa Active: <strong class="text-slate-200">{{ Auth::user()->name }}</strong></span>
             </div>
-            <a href="/admin" class="text-xs font-semibold px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 transition duration-300">
-                Admin Panel
+            <a href="/admin/my-profile" class="text-xs font-semibold px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 transition duration-300">
+                My Profile
             </a>
             <form action="{{ route('logout') }}" method="POST" class="inline">
                 @csrf
@@ -150,7 +150,7 @@
                         @php $course = $batch->course; @endphp
                         <div class="glass-card rounded-2xl overflow-hidden hover:scale-[1.01] transition duration-300 flex flex-col justify-between group">
                             <div>
-                                <div class="relative h-44 w-full bg-slate-800 overflow-hidden">
+                                <a href="{{ route('course.detail', $course->slug) }}" class="relative h-44 w-full bg-slate-800 overflow-hidden block">
                                     @if($course->thumbnail)
                                         <img src="{{ $course->thumbnail }}" alt="{{ $course->title }}" class="w-full h-full object-cover">
                                     @else
@@ -167,14 +167,16 @@
                                             <span class="text-[10px] font-bold tracking-wide uppercase px-2 py-1 rounded bg-indigo-500 text-white shadow-lg">Glacier</span>
                                         @endif
                                     </div>
-                                </div>
+                                </a>
 
                                 <div class="p-6">
                                     @if($course->category)
                                         <span class="text-[10px] font-semibold text-indigo-400 uppercase tracking-widest">{{ $course->category->name }}</span>
                                     @endif
                                     <h3 class="font-outfit font-bold text-lg text-white mt-1 group-hover:text-indigo-300 transition duration-300 leading-tight">
-                                        {{ $course->title }}
+                                        <a href="{{ route('course.detail', $course->slug) }}" class="hover:underline">
+                                            {{ $course->title }}
+                                        </a>
                                     </h3>
                                     <!-- Batch Name Badge -->
                                     <div class="mt-1.5 flex items-center gap-2">
@@ -198,11 +200,30 @@
                                             @endif
                                         </button>
                                     </form>
-                                    @if(isset($certificates[$course->id]))
-                                        <a href="{{ asset('storage/' . $certificates[$course->id]->file_path) }}" target="_blank" class="w-full text-center text-xs font-semibold py-3 px-4 rounded-xl border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 glow-hover flex items-center justify-center gap-2">
+                                     @if(isset($certificates[$course->id]))
+                                        <a href="{{ asset('storage/' . $certificates[$course->id]->file_path) }}" target="_blank" class="w-full text-center text-xs font-semibold py-3 px-4 rounded-xl border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 glow-hover flex items-center justify-center gap-2 mb-2">
                                             <span>Unduh Sertifikat</span>
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                                         </a>
+
+                                        @php
+                                            $existingReview = \App\Models\CourseReview::where('user_id', Auth::id())->where('course_id', $course->id)->first();
+                                        @endphp
+                                        @if(!$existingReview)
+                                            <button onclick="openReviewModal('{{ $course->id }}', '{{ addslashes($course->title) }}')" class="w-full text-center text-xs font-bold py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 glow-hover flex items-center justify-center gap-2">
+                                                <span>Beri Ulasan</span>
+                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                            </button>
+                                        @else
+                                            <div class="w-full text-center text-xs font-semibold py-2.5 px-4 rounded-xl bg-slate-800 border border-slate-700 text-amber-400 flex items-center justify-center gap-1.5">
+                                                <span>Rating Anda:</span>
+                                                <div class="flex">
+                                                    @for($i = 1; $i <= 5; $i++)
+                                                        <svg class="w-3.5 h-3.5 {{ $i <= $existingReview->rating ? 'text-amber-400' : 'text-slate-600' }}" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                                    @endfor
+                                                </div>
+                                            </div>
+                                        @endif
                                     @endif
                                 @else
                                     <div class="w-full text-center text-xs font-semibold py-3 px-4 rounded-xl bg-slate-800/50 border border-slate-700/30 text-slate-400 flex flex-col items-center justify-center gap-1">
@@ -237,7 +258,7 @@
                         @php $course = $batch->course; @endphp
                         <div class="glass-card rounded-2xl overflow-hidden hover:scale-[1.01] transition duration-300 flex flex-col justify-between group">
                             <div>
-                                <div class="relative h-44 w-full bg-slate-800 overflow-hidden">
+                                <a href="{{ route('course.detail', $course->slug) }}" class="relative h-44 w-full bg-slate-800 overflow-hidden block">
                                     @if($course->thumbnail)
                                         <img src="{{ $course->thumbnail }}" alt="{{ $course->title }}" class="w-full h-full object-cover">
                                     @else
@@ -262,14 +283,16 @@
                                             <span class="text-[10px] font-bold tracking-wide uppercase px-2 py-1 rounded bg-indigo-500 text-white shadow-lg">Glacier</span>
                                         @endif
                                     </div>
-                                </div>
+                                </a>
 
                                 <div class="p-6">
                                     @if($course->category)
                                         <span class="text-[10px] font-semibold text-indigo-400 uppercase tracking-widest">{{ $course->category->name }}</span>
                                     @endif
                                     <h3 class="font-outfit font-bold text-lg text-white mt-1 group-hover:text-indigo-300 transition duration-300 leading-tight">
-                                        {{ $course->title }}
+                                        <a href="{{ route('course.detail', $course->slug) }}" class="hover:underline">
+                                            {{ $course->title }}
+                                        </a>
                                     </h3>
                                     <!-- Batch Name Badge -->
                                     <div class="mt-1.5 flex items-center gap-2">
@@ -326,5 +349,128 @@
         </section>
     </div>
 
+    <!-- Beautiful Premium Review Modal -->
+    <div id="reviewModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md transition-all duration-300">
+        <div class="glass-card w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl border border-slate-700/50 flex flex-col transform scale-95 transition-transform duration-300" id="reviewModalContainer">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-800/60 flex items-center justify-between">
+                <h3 class="font-outfit font-bold text-lg text-white">Beri Ulasan Kursus</h3>
+                <button onclick="closeReviewModal()" class="text-slate-400 hover:text-white transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- Form -->
+            <form id="reviewForm" method="POST" action="">
+                @csrf
+                <div class="p-6 space-y-5">
+                    <!-- Course Title Display -->
+                    <div>
+                        <span class="text-[10px] font-semibold text-indigo-400 uppercase tracking-widest block">KURSUS</span>
+                        <h4 id="reviewCourseTitle" class="font-outfit font-bold text-white text-base mt-0.5"></h4>
+                    </div>
+
+                    <!-- Star Selector -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Pilih Rating</label>
+                        <div class="flex items-center gap-2">
+                            <input type="hidden" name="rating" id="reviewRatingInput" value="5">
+                            @for($i = 1; $i <= 5; $i++)
+                                <button type="button" onclick="setReviewRating({{ $i }})" onmouseenter="highlightStars({{ $i }})" onmouseleave="resetStars()" class="text-slate-600 hover:scale-110 transition duration-150 focus:outline-none" id="star-{{ $i }}">
+                                    <svg class="w-9 h-9" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                </button>
+                            @endfor
+                            <span class="text-sm font-semibold text-slate-400 ml-2" id="ratingText">Luar Biasa!</span>
+                        </div>
+                    </div>
+
+                    <!-- Review Textarea -->
+                    <div>
+                        <label for="review_text" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Tulis Ulasan Anda (Opsional)</label>
+                        <textarea name="review_text" id="review_text" rows="4" maxlength="1000" placeholder="Ceritakan pengalaman belajar Anda yang berharga..." class="w-full bg-slate-900/60 border border-slate-700/60 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 placeholder-slate-500 transition duration-300 resize-none"></textarea>
+                    </div>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="px-6 py-4 border-t border-slate-800/60 bg-slate-900/40 flex justify-end gap-3">
+                    <button type="button" onclick="closeReviewModal()" class="text-xs font-semibold px-4 py-2.5 rounded-xl border border-slate-700 hover:bg-slate-800 text-slate-300 transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="text-xs font-bold px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white glow-hover">
+                        Kirim Ulasan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Logic -->
+    <script>
+        let currentRating = 5;
+        const ratingPhrases = {
+            1: "Sangat Buruk",
+            2: "Buruk",
+            3: "Cukup Baik",
+            4: "Sangat Baik",
+            5: "Luar Biasa!"
+        };
+
+        function openReviewModal(courseId, courseTitle) {
+            const modal = document.getElementById('reviewModal');
+            const container = document.getElementById('reviewModalContainer');
+            const title = document.getElementById('reviewCourseTitle');
+            const form = document.getElementById('reviewForm');
+
+            title.textContent = courseTitle;
+            form.action = `/courses/${courseId}/reviews`;
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                container.classList.remove('scale-95');
+                container.classList.add('scale-100');
+            }, 50);
+
+            setReviewRating(5);
+        }
+
+        function closeReviewModal() {
+            const modal = document.getElementById('reviewModal');
+            const container = document.getElementById('reviewModalContainer');
+
+            container.classList.remove('scale-100');
+            container.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function setReviewRating(rating) {
+            currentRating = rating;
+            document.getElementById('reviewRatingInput').value = rating;
+            document.getElementById('ratingText').textContent = ratingPhrases[rating];
+            updateStarColors(rating);
+        }
+
+        function highlightStars(rating) {
+            updateStarColors(rating);
+        }
+
+        function resetStars() {
+            updateStarColors(currentRating);
+        }
+
+        function updateStarColors(rating) {
+            for (let i = 1; i <= 5; i++) {
+                const star = document.getElementById(`star-${i}`);
+                if (i <= rating) {
+                    star.classList.remove('text-slate-600');
+                    star.classList.add('text-amber-400');
+                } else {
+                    star.classList.remove('text-amber-400');
+                    star.classList.add('text-slate-600');
+                }
+            }
+        }
+    </script>
 </body>
 </html>

@@ -44,4 +44,23 @@ class EnrollmentResource extends Resource
             'edit' => EditEnrollment::route('/{record}/edit'),
         ];
     }
+
+    public static function getWidgets(): array
+    {
+        return [
+            \App\Filament\Resources\Enrollments\Widgets\EnrollmentStatsOverview::class,
+        ];
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+        if ($user && $user->hasRole('admin_fakultas')) {
+            $query->whereHas('courseBatch.course', function ($q) use ($user) {
+                $q->where('unit_id', $user->unit_id);
+            });
+        }
+        return $query;
+    }
 }

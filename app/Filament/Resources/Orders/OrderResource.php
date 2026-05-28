@@ -44,4 +44,23 @@ class OrderResource extends Resource
             'edit' => EditOrder::route('/{record}/edit'),
         ];
     }
+
+    public static function getWidgets(): array
+    {
+        return [
+            \App\Filament\Resources\Orders\Widgets\OrderStatsOverview::class,
+        ];
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+        if ($user && $user->hasRole('admin_fakultas')) {
+            $query->whereHas('courseBatch.course', function ($q) use ($user) {
+                $q->where('unit_id', $user->unit_id);
+            });
+        }
+        return $query;
+    }
 }

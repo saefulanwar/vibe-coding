@@ -34,11 +34,13 @@ Route::group([
     'middleware' => [ 'localeSessionRedirect', 'localizationRedirect', 'localeViewPath' ]
 ], function() {
     Route::get('/', LandingPage::class)->name('home');
+    Route::get('/courses/{slug}', \App\Livewire\CourseDetail::class)->name('course.detail');
 
     // Protected Student Portal routes
     Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', [CourseController::class, 'dashboard'])->name('dashboard');
         Route::get('/courses/{course}/lessons/{lesson}', [CourseController::class, 'showLocalLesson'])->name('lessons.show');
+        Route::post('/courses/{course}/reviews', [CourseController::class, 'storeReview'])->name('courses.reviews.store');
 
         // Simulated sandbox payment gateway views
         Route::get('/payment/mock/{reference}', [CheckoutController::class, 'showMockPaymentPage'])->name('payment.mock');

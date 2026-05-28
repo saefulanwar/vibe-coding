@@ -90,4 +90,19 @@ class Course extends Model implements HasMedia
     {
         return $this->belongsTo(CertificateTemplate::class, 'certificate_template_id');
     }
+
+    public function reviews()
+    {
+        return $this->hasMany(CourseReview::class);
+    }
+
+    public function recalculateRating()
+    {
+        $publishedReviews = $this->reviews()->where('status', 'published')->get();
+        
+        $this->reviews_count = $publishedReviews->count();
+        $this->average_rating = $this->reviews_count > 0 ? $publishedReviews->avg('rating') : 0.00;
+        
+        $this->saveQuietly();
+    }
 }

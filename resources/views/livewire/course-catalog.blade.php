@@ -81,16 +81,6 @@
                 </div>
 
                 <div class="mb-5 border-t border-slate-100 pt-4">
-                    <label for="delivery" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">{{ __('Metode Belajar') }}</label>
-                    <select wire:model.live="deliveryFilter" id="delivery" class="w-full text-sm bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 transition">
-                        <option value="all">{{ __('Semua Metode') }}</option>
-                        <option value="local">{{ __('Aplikasi Glacier') }}</option>
-                        <option value="moodle">{{ __('LMS Moodle') }}</option>
-                        <option value="hybrid">{{ __('Hybrid Learning') }}</option>
-                    </select>
-                </div>
-
-                <div class="mb-5 border-t border-slate-100 pt-4">
                     <label for="price" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">{{ __('Harga') }}</label>
                     <select wire:model.live="priceFilter" id="price" class="w-full text-sm bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2.5 focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 transition">
                         <option value="all">{{ __('Semua Harga') }}</option>
@@ -115,7 +105,7 @@
                         @foreach($this->batches as $batch)
                             <div class="bg-white rounded-2xl border border-slate-200/70 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-auto group">
                                 
-                                <div class="relative aspect-video w-full bg-slate-100 overflow-hidden flex-shrink-0">
+                                <a href="{{ route('course.detail', $batch->course->slug) }}" class="relative aspect-video w-full bg-slate-100 overflow-hidden flex-shrink-0 block">
                                     @if($batch->course->thumbnail)
                                         <img src="{{ $batch->course->thumbnail }}" alt="{{ $batch->course->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                                     @else
@@ -131,7 +121,7 @@
                                             {{ $batch->course->unit->name }}
                                         </div>
                                     @endif
-                                </div>
+                                </a>
 
                                 <div class="p-5 flex flex-col justify-between flex-grow">
                                     <div>
@@ -142,7 +132,9 @@
                                         </div>
 
                                         <h3 class="text-base font-bold text-slate-900 mb-1 group-hover:text-sky-600 transition duration-150 leading-snug min-h-[2.75rem] line-clamp-2">
-                                            {{ $batch->course->title }}
+                                            <a href="{{ route('course.detail', $batch->course->slug) }}" class="hover:underline">
+                                                {{ $batch->course->title }}
+                                            </a>
                                         </h3>
 
                                         <div class="flex flex-wrap items-center gap-1.5 mb-3">

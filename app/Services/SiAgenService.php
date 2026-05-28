@@ -26,12 +26,15 @@ class SiAgenService
 
         $payload = [
             'ttd_id' => $data['ttd_id'] ?? config('services.siagen.ttd_id', 1),
-            'keamanan_id' => $data['keamanan_id'] ?? config('services.siagen.keamanan_id', 4),
+            'keamanan_id' => $data['keamanan_id'] ?? config('services.siagen.keamanan_id'),
             'kodesuratid' => $data['kodesuratid'] ?? config('services.siagen.kodesuratid', 613),
-            'create_at' => $data['create_at'] ?? now()->format('Y-m-d'),
+            'create_at' => $data['create_at'] ?? config('services.siagen.create_at') ?? now()->format('Y-m-d'),
             'hal' => $data['hal'] ?? 'Sertifikat Kelulusan Kursus',
             'jenis_surat_id' => $data['jenis_surat_id'] ?? config('services.siagen.jenis_surat_id', 27),
         ];
+
+        // Filter out null parameters to allow optional values (like keamanan_id)
+        $payload = array_filter($payload, fn($val) => $val !== null);
 
         Log::info("SiAgen: Requesting document number with payload", $payload);
 
@@ -48,6 +51,7 @@ class SiAgenService
                     'status' => true,
                     'id' => $body['id'],
                     'nomor' => $body['nomor'],
+                    'url_file' => $body['url_file'] ?? null,
                     'message' => $body['message'] ?? 'success',
                 ];
             }
@@ -61,7 +65,7 @@ class SiAgenService
     /**
      * Upload the certificate file to SiAgen.
      */
-    public function uploadFileSurat(string $siagenId, string $nomorSurat, string $filePath): bool
+    public function uploadFileSurat(string $siagenId, string $nomorSurat, string $filePath): string|bool
     {
         $url = $this->baseUrl . '/penomoran-rest/upload';
 
@@ -74,13 +78,12 @@ class SiAgenService
         $response = Http::withHeaders([
             'key' => $this->apiKey,
         ])->timeout(60)
-        ->attach('file', fopen($filePath, 'r'), 'certificate.pdf', [
+        ->attach('file', fopen($filePath, 'rb'), 'certificate.pdf', [
             'Content-Type' => 'application/pdf'
         ])
-        ->post($url, [
-            'id' => $siagenId,
-            'nomor_surat' => $nomorSurat,
-        ]);
+        ->attach('id', $siagenId)
+        ->attach('nomor_surat', $nomorSurat)
+        ->post($url);
 
         if ($response->successful()) {
             $body = $response->json();
@@ -96,9 +99,6 @@ class SiAgenService
         throw new Exception('SiAgen Upload HTTP error: ' . $response->status() . ' - ' . $response->body());
     }
 
-    /**
-     * Execute digital signature (TTE) for the uploaded document.
-     */
     public function executeTte(string $siagenId, string $nomorSurat, string $email, string $passphrase, ?string $nik = null): array
     {
         $url = $this->baseUrl . '/tte-rest/nomor';
@@ -106,20 +106,20 @@ class SiAgenService
         $payload = [
             'id' => $siagenId,
             'nomor_surat' => $nomorSurat,
+            'no_surat' => $nomorSurat, // Compatibility for both parameter schemas
             'email' => $email,
             'passphrase' => $passphrase,
         ];
 
-        // Only include NIK in non-production/local environments
-        if (config('app.env') !== 'production' && !empty($nik)) {
+        if (!empty($nik)) {
             $payload['nik'] = $nik;
         }
 
-        Log::info("SiAgen: Executing TTE on ID {$siagenId}, Nomor: {$nomorSurat}");
+        Log::info("SiAgen: Executing TTE on ID {$siagenId}, Nomor: {$nomorSurat}, Email: {$email}");
 
         $response = Http::withHeaders([
             'key' => $this->apiKey,
-        ])->timeout(60)->asMultipart()->post($url, $payload);
+        ])->timeout(60)->asForm()->post($url, $payload);
 
         if ($response->successful()) {
             $body = $response->json();

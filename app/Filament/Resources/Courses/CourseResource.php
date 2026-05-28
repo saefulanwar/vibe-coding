@@ -49,4 +49,21 @@ class CourseResource extends Resource
             'edit' => EditCourse::route('/{record}/edit'),
         ];
     }
+
+    public static function getWidgets(): array
+    {
+        return [
+            \App\Filament\Resources\Courses\Widgets\CourseStatsOverview::class,
+        ];
+    }
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = auth()->user();
+        if ($user && $user->hasRole('admin_fakultas')) {
+            $query->where('unit_id', $user->unit_id);
+        }
+        return $query;
+    }
 }

@@ -54,6 +54,7 @@ return [
         'kodesuratid' => env('SIAGEN_KODESURATID', 613),
         'jenis_surat_id' => env('SIAGEN_JENIS_SURAT_ID', 27),
         'signer_email' => env('SIAGEN_SIGNER_EMAIL', 'dummy@dummy.com'),
+        'create_at' => env('SIAGEN_CREATE_AT'),
     ],
 
 ];

@@ -7,6 +7,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Tables\Grouping\Group;
 
 class OrdersTable
 {
@@ -33,16 +34,35 @@ class OrdersTable
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
+                    ->icon(fn (string $state): ?string => match ($state) {
+                        'paid' => 'heroicon-m-check-circle',
+                        'pending' => 'heroicon-m-clock',
+                        'failed' => 'heroicon-m-x-circle',
+                        'expired' => 'heroicon-m-exclamation-triangle',
+                        default => null,
+                    })
                     ->color(fn (string $state): string => match ($state) {
                         'paid' => 'success',
                         'pending' => 'warning',
                         'failed', 'expired' => 'danger',
                         default => 'gray',
-                    }),
-                TextColumn::make('created_at')
-                    ->label('Tanggal')
-                    ->dateTime()
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'paid' => 'Lunas',
+                        'pending' => 'Pending',
+                        'failed' => 'Gagal',
+                        'expired' => 'Kedaluwarsa',
+                        default => ucfirst($state),
+                    })
                     ->sortable(),
+                TextColumn::make('created_at')
+                    ->label('Tanggal Order')
+                    ->date('d M Y, H:i')
+                    ->sortable(),
+            ])
+            ->groups([
+                Group::make('status')
+                    ->label('Status'),
             ])
             ->filters([
                 \Filament\Tables\Filters\SelectFilter::make('unit')

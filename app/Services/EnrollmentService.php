@@ -42,36 +42,46 @@ class EnrollmentService
         // 2. Moodle enrollment if source is moodle
         if ($course->source === 'moodle') {
             try {
-                // Ensure Moodle user account exists
-                if (empty($user->moodle_user_id)) {
+                // Always verify the Moodle user actually exists on the LMS by email lookup.
+                // A stored moodle_user_id can become stale if the account was deleted, recreated
+                // with a different auth type, or if a previous creation attempt partially failed.
+                $verifiedMoodleId = $this->moodleService->getMoodleUserByEmail($user->email);
+
+                if ($verifiedMoodleId) {
+                    // User exists on Moodle — update local record if it was stale or missing
+                    if ($user->moodle_user_id !== $verifiedMoodleId) {
+                        $user->update(['moodle_user_id' => $verifiedMoodleId]);
+                        Log::info("Updated stale local moodle_user_id to {$verifiedMoodleId} for {$user->email}");
+                    }
+                } else {
+                    // User does NOT exist on Moodle — create a new account
                     $moodlePassword = 'P@ssw0rd' . Str::random(4) . '!';
-                    
-                    // Create Moodle Account
-                    $moodleUserId = $this->moodleService->createMoodleUser([
+                    $verifiedMoodleId = $this->moodleService->createMoodleUser([
                         'email' => $user->email,
                         'name' => $user->name,
                         'password' => $moodlePassword,
                     ]);
 
-                    $user->update(['moodle_user_id' => $moodleUserId]);
-                    Log::info("Created Moodle user ID {$moodleUserId} for {$user->email}");
+                    $user->update(['moodle_user_id' => $verifiedMoodleId]);
+                    Log::info("Created Moodle user ID {$verifiedMoodleId} for {$user->email}");
                 }
 
                 // Enroll user in Moodle Course
-                if ($course->moodle_course_id) {
+                if ($course->moodle_course_id && $course->moodle_course_id > 0) {
+                    Log::info("Attempting enrollment: User {$verifiedMoodleId} -> Moodle Course {$course->moodle_course_id} (Course: {$course->title})");
                     $this->moodleService->enrollUserInCourse(
-                        $user->moodle_user_id,
+                        $verifiedMoodleId,
                         $course->moodle_course_id
                     );
-                    Log::info("Enrolled Moodle user ID {$user->moodle_user_id} in Moodle course {$course->moodle_course_id}");
+                    Log::info("Enrolled Moodle user ID {$verifiedMoodleId} in Moodle course {$course->moodle_course_id}");
 
-                    // [BARU] Add user to Moodle Group if batch has moodle_group_id
+                    // Add user to Moodle Group if batch has moodle_group_id
                     if ($batch->moodle_group_id) {
                         $this->moodleService->addUserToGroup(
                             $batch->moodle_group_id,
-                            $user->moodle_user_id
+                            $verifiedMoodleId
                         );
-                        Log::info("Added Moodle user ID {$user->moodle_user_id} to Moodle Group ID {$batch->moodle_group_id}");
+                        Log::info("Added Moodle user ID {$verifiedMoodleId} to Moodle Group ID {$batch->moodle_group_id}");
                     }
                 }
             } catch (\Exception $e) {

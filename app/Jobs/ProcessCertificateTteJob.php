@@ -21,15 +21,17 @@ class ProcessCertificateTteJob implements ShouldQueue
     public Certificate $certificate;
     public string $nik;
     public string $encryptedPassphrase;
+    public string $email;
 
     /**
      * Create a new job instance.
      */
-    public function __construct(Certificate $certificate, string $nik, string $encryptedPassphrase)
+    public function __construct(Certificate $certificate, string $nik, string $encryptedPassphrase, string $email)
     {
         $this->certificate = $certificate;
         $this->nik = $nik;
         $this->encryptedPassphrase = $encryptedPassphrase;
+        $this->email = $email;
     }
 
     /**
@@ -97,25 +99,18 @@ class ProcessCertificateTteJob implements ShouldQueue
                 if (isset($nomorData['status']) && $nomorData['status'] === true) {
                     $this->certificate->update([
                         'siagen_id' => $nomorData['id'],
-                        'siagen_nomor' => $nomorData['nomor']
+                        'siagen_nomor' => $nomorData['nomor'],
+                        'siagen_manual_url' => $nomorData['url_file'] ?? null,
                     ]);
-                    Log::info("ProcessCertificateTteJob: Assigned SiAgen ID {$nomorData['id']} and Nomor {$nomorData['nomor']}");
+                    Log::info("ProcessCertificateTteJob: Assigned SiAgen ID {$nomorData['id']}, Nomor {$nomorData['nomor']}, Manual URL: " . ($nomorData['url_file'] ?? 'none'));
                 } else {
                     throw new Exception("SiAgen numbering returned false status.");
                 }
             } catch (Exception $e) {
                 Log::error("ProcessCertificateTteJob: Failed to request SiAgen number: " . $e->getMessage());
 
-                // Local fallback for numbering
-                if (config('app.env') === 'local') {
-                    Log::warning("Local environment fallback: Generating fake numbering for testing.");
-                    $this->certificate->update([
-                        'siagen_id' => 'fake_' . rand(10000, 99999),
-                        'siagen_nomor' => 'CERT/UNY/' . now()->format('Y') . '/' . rand(100, 999),
-                    ]);
-                } else {
-                    throw $e;
-                }
+                // Always throw exception for real signature execution
+                throw $e;
             }
 
             // Step 2: Generate PDF dengan Nomor Surat
@@ -165,6 +160,10 @@ class ProcessCertificateTteJob implements ShouldQueue
                     if (is_string($uploadResult)) {
                         $uploadUrl = $uploadResult;
                         $uploadSuccess = true;
+                        $this->certificate->update([
+                            'siagen_gateway_url' => $uploadUrl
+                        ]);
+                        Log::info("ProcessCertificateTteJob: Document uploaded. Saved Gateway URL: " . $uploadUrl);
                     } elseif ($uploadResult === true) {
                         $uploadSuccess = true;
                     }
@@ -178,7 +177,7 @@ class ProcessCertificateTteJob implements ShouldQueue
             if ($uploadSuccess) {
                 Log::info("ProcessCertificateTteJob: Requesting TTE signature execution from SiAgen.");
                 try {
-                    $signerEmail = config('services.siagen.signer_email', 'dummy@dummy.com');
+                    $signerEmail = $this->email;
                     $tteResult = $siagenService->executeTte(
                         $this->certificate->siagen_id,
                         $this->certificate->siagen_nomor,
@@ -190,6 +189,15 @@ class ProcessCertificateTteJob implements ShouldQueue
                     if (isset($tteResult['status']) && $tteResult['status'] === true) {
                         Log::info("ProcessCertificateTteJob: TTE successfully executed.");
                         $tteSuccess = true;
+                        
+                        // Extract signed PDF URL from TTE response if available
+                        if (!empty($tteResult['file'])) {
+                            $uploadUrl = $tteResult['file'];
+                            Log::info("ProcessCertificateTteJob: Obtained signed PDF URL from TTE response 'file': " . $uploadUrl);
+                        } elseif (!empty($tteResult['url'])) {
+                            $uploadUrl = $tteResult['url'];
+                            Log::info("ProcessCertificateTteJob: Obtained signed PDF URL from TTE response 'url': " . $uploadUrl);
+                        }
                     } else {
                         Log::error("ProcessCertificateTteJob: TTE execution failed: " . ($tteResult['message'] ?? 'Unknown error'));
                     }
@@ -234,22 +242,8 @@ class ProcessCertificateTteJob implements ShouldQueue
                 }
             }
 
-            // Fallback for Local or Failed Signature
-            if (config('app.env') === 'local') {
-                Log::warning("Local environment fallback: Falling back to local unsigned PDF certificate.");
-                Storage::disk('public')->put($finalPdfPath, file_get_contents($tempPdfPath));
-
-                // Add to Media Library
-                $this->certificate->clearMediaCollection('certificates');
-                $this->certificate->addMedia($absolutePath)->toMediaCollection('certificates');
-
-                $this->certificate->update([
-                    'status' => 'completed',
-                    'file_path' => $finalPdfPath,
-                ]);
-            } else {
-                $this->certificate->update(['status' => 'failed']);
-            }
+            // Set status to failed if real signature failed
+            $this->certificate->update(['status' => 'failed']);
 
             // Cleanup temp file
             if (file_exists($tempPdfPath)) {
