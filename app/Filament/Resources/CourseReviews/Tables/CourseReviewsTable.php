@@ -106,6 +106,7 @@ class CourseReviewsTable
                     ->label(fn ($record) => $record->status === 'published' ? 'Sembunyikan' : 'Tampilkan')
                     ->icon(fn ($record) => $record->status === 'published' ? 'heroicon-o-eye-slash' : 'heroicon-o-eye')
                     ->color(fn ($record) => $record->status === 'published' ? 'danger' : 'success')
+                    ->visible(fn ($record) => auth()->user() && (auth()->user()->hasRole('super_admin') || (auth()->user()->hasRole('admin_fakultas') && $record->course && $record->course->unit_id === auth()->user()->unit_id)))
                     ->action(function ($record) {
                         $newStatus = $record->status === 'published' ? 'hidden' : 'published';
                         $record->update(['status' => $newStatus]);

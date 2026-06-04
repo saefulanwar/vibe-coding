@@ -57,4 +57,16 @@ return [
         'create_at' => env('SIAGEN_CREATE_AT'),
     ],
 
+    'siku' => [
+        'base_url' => env('SIKU_BASE_URL', 'https://siku.uny.ac.id'),
+        'email' => env('SIKU_EMAIL', 'saefulanwar@uny.ac.id'),
+        'password' => env('SIKU_PASSWORD', '123456'),
+        'app_id' => env('SIKU_APP_ID', 582931),
+        'kategori' => env('SIKU_KATEGORI', 58),
+        'jenis_mitra' => env('SIKU_JENIS_MITRA', 1),
+        'jenis_pendapatan' => env('SIKU_JENIS_PENDAPATAN', 58),
+        'unit' => env('SIKU_UNIT', 'FISHIPOL'),
+        'lokasi' => env('SIKU_LOKASI', 309),
+    ],
+
 ];

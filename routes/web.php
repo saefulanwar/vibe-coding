@@ -46,6 +46,10 @@ Route::group([
         Route::get('/payment/mock/{reference}', [CheckoutController::class, 'showMockPaymentPage'])->name('payment.mock');
         Route::post('/payment/mock/{reference}/complete', [CheckoutController::class, 'completeMockPayment'])->name('payment.complete');
 
+        // Siku real/development billing payment views
+        Route::get('/payment/siku/{reference}', [CheckoutController::class, 'showSikuPaymentPage'])->name('payment.siku');
+        Route::post('/payment/siku/{reference}/check', [CheckoutController::class, 'checkSikuPaymentStatus'])->name('payment.siku.check');
+
         // Transaction routes: gated by profile completeness
         Route::middleware([EnsureProfileComplete::class])->group(function () {
             Route::post('/checkout', [CheckoutController::class, 'checkout'])->name('checkout');

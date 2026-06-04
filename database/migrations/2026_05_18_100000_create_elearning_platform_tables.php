@@ -90,6 +90,7 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->string('role')->default('student')->after('email');
             $table->bigInteger('moodle_user_id')->nullable()->unique()->after('role');
+            $table->foreignId('unit_id')->nullable()->after('moodle_user_id')->constrained('units')->nullOnDelete();
         });
     }
 
@@ -99,7 +100,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['role', 'moodle_user_id']);
+            $table->dropForeign(['unit_id']);
+            $table->dropColumn(['role', 'moodle_user_id', 'unit_id']);
         });
 
         Schema::dropIfExists('enrollments');

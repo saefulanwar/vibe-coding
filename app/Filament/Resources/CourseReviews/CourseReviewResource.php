@@ -47,6 +47,45 @@ class CourseReviewResource extends Resource
         ];
     }
 
+    public static function canViewAny(): bool
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return false;
+        }
+        return $user->hasRole('super_admin') || $user->hasRole('admin_fakultas');
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canView(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return false;
+        }
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+        if ($user->hasRole('admin_fakultas')) {
+            return $record->course && $record->course->unit_id === $user->unit_id;
+        }
+        return false;
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return static::canView($record);
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return static::canView($record);
+    }
+
     public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
         $query = parent::getEloquentQuery();

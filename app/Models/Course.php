@@ -39,6 +39,8 @@ class Course extends Model implements HasMedia
         'source',
         'moodle_course_id',
         'unit_id',
+        'ig_id',
+        'lokasi_id',
         'certificate_template_id',
         'requires_tte',
     ];
