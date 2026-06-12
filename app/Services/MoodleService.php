@@ -28,6 +28,12 @@ class MoodleService
         }
 
         $url = rtrim($this->baseUrl, '/') . '/webservice/rest/server.php';
+        
+        $postData = array_merge([
+            'wstoken' => $this->token,
+            'wsfunction' => $function,
+            'moodlewsrestformat' => 'json',
+        ], $params);
 
         try {
             $postData = array_merge([
@@ -115,6 +121,38 @@ class MoodleService
     /**
      * Create user in Moodle
      */
+    public function getMoodleUserByEmail(string $email): ?int
+    {
+        $params = [
+            'criteria' => [
+                [
+                    'key' => 'email',
+                    'value' => $email,
+                ]
+            ]
+        ];
+
+        try {
+            // Usually core_user_get_users returns something like { "users": [ { "id": 123, ... } ] }
+            // But our call wrapper might return it directly or wrapped in an array.
+            $response = $this->call('core_user_get_users', $params);
+            
+            // If response is nested in 'users' key
+            if (isset($response['users']) && is_array($response['users']) && count($response['users']) > 0) {
+                return (int) $response['users'][0]['id'];
+            }
+            
+            // If response is the array of users directly
+            if (is_array($response) && isset($response[0]['id'])) {
+                return (int) $response[0]['id'];
+            }
+        } catch (Exception $e) {
+            Log::warning("Moodle User Get Failed: " . $e->getMessage());
+        }
+
+        return null;
+    }
+
     public function createMoodleUser(array $userData): int
     {
         // Check if user already exists in Moodle first to prevent duplicates/errors
@@ -136,8 +174,8 @@ class MoodleService
                 [
                     'username' => $username,
                     'password' => $userData['password'] ?? 'P@ssw0rd123!',
-                    'firstname' => $userData['firstname'] ?? explode(' ', $userData['name'])[0] ?? 'Student',
-                    'lastname' => $userData['lastname'] ?? explode(' ', $userData['name'])[1] ?? 'Elearning',
+                    'firstname' => $userData['name'] ?? 'Peserta Elearning',
+                    'lastname' => $userData['lastname'] ?? $nim,
                     'email' => $userData['email'],
                     'auth' => 'manual',
                     'idnumber' => $username,
@@ -145,18 +183,27 @@ class MoodleService
             ]
         ];
 
-        $response = $this->call('core_user_create_users', $params);
+        try {
+            $response = $this->call('core_user_create_users', $params);
 
-        if (!empty($response) && isset($response[0]['id'])) {
-            return (int) $response[0]['id'];
+            if (!empty($response) && isset($response[0]['id'])) {
+                return (int) $response[0]['id'];
+            }
+            
+            // Fallback: Get user by email if creation was successful but ID isn't clearly returned
+            $moodleId = $this->getMoodleUserByEmail($userData['email']);
+
+            if ($moodleId) {
+                return $moodleId;
+            }
+
+            throw new Exception("Moodle API Exception: Could not determine user ID from response.");
+        } catch (Exception $e) {
+            Log::error("Moodle Create User Error: " . $e->getMessage());
+            throw $e;
         }
-
-        throw new Exception('Failed to create Moodle user: Invalid API response.');
     }
 
-    /**
-     * Enroll user in Moodle Course
-     */
     public function enrollUserInCourse(int $moodleUserId, int $moodleCourseId, int $roleId = 5): bool
     {
         if ($moodleCourseId <= 0) {
@@ -172,12 +219,20 @@ class MoodleService
                     'roleid' => $roleId, // 5 = Student
                     'userid' => $moodleUserId,
                     'courseid' => $moodleCourseId,
+                    'timestart' => 0,
+                    'timeend' => 0,
+                    'suspend' => 0,
                 ]
             ]
         ];
 
-        $this->call('enrol_manual_enrol_users', $params);
-        return true;
+        try {
+            $this->call('enrol_manual_enrol_users', $params);
+            return true;
+        } catch (Exception $e) {
+            Log::error("Moodle Enroll Error: " . $e->getMessage());
+            throw $e;
+        }
     }
 
     /**
@@ -203,10 +258,7 @@ class MoodleService
                 return (int) $response[0]['id'];
             }
         } catch (Exception $e) {
-            if (config('app.env') === 'local') {
-                Log::warning('Moodle API core_group_create_groups failed in local environment. Returning mock group ID.');
-                return rand(1000, 9999);
-            }
+            Log::error("Moodle Create Group Error: " . $e->getMessage());
             throw $e;
         }
 
@@ -230,10 +282,7 @@ class MoodleService
         try {
             $this->call('core_group_add_group_members', $params);
         } catch (Exception $e) {
-            if (config('app.env') === 'local') {
-                Log::warning('Moodle API core_group_add_group_members failed in local environment. Proceeding anyway.');
-                return true;
-            }
+            Log::error("Moodle Add User To Group Error: " . $e->getMessage());
             throw $e;
         }
         

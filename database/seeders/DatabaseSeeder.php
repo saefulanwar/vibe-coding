@@ -19,22 +19,35 @@ class DatabaseSeeder extends Seeder
         $adminFakultasRole = Role::firstOrCreate(['name' => 'admin_fakultas']);
         $memberRole = Role::firstOrCreate(['name' => 'member']);
 
-        // Super Admin
+        // Create Units
+        $unitIT = \App\Models\Unit::updateOrCreate(
+            ['code' => 'IT'],
+            ['name' => 'Teknologi Informasi']
+        );
+
+        $unitHRD = \App\Models\Unit::updateOrCreate(
+            ['code' => 'HRD'],
+            ['name' => 'Human Resources Development']
+        );
+
+        // Super Admin (global, no unit)
         $superAdmin = User::updateOrCreate(
             ['email' => 'superadmin@example.com'],
             [
                 'name' => 'Super Admin',
                 'password' => Hash::make('password'),
+                'unit_id' => null,
             ]
         );
         $superAdmin->assignRole($superAdminRole);
 
-        // Admin Fakultas
+        // Admin Fakultas (assigned to IT unit)
         $adminFakultas = User::updateOrCreate(
             ['email' => 'admin@example.com'],
             [
                 'name' => 'Admin Fakultas',
                 'password' => Hash::make('password'),
+                'unit_id' => $unitIT->id,
             ]
         );
         $adminFakultas->assignRole($adminFakultasRole);
@@ -55,11 +68,12 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Teknologi Informasi']
         );
 
-        // Seed Local Course
+        // Seed Local Course (assigned to IT unit)
         $localCourse = \App\Models\Course::updateOrCreate(
             ['slug' => 'mastering-laravel-13-dasar-hingga-mahir'],
             [
                 'category_id' => $category->id,
+                'unit_id' => $unitIT->id,
                 'title' => 'Mastering Laravel 13 - Dasar hingga Mahir',
                 'description' => 'Pelajari framework PHP paling populer dari nol. Kursus mandiri ini mencakup MVC, Eloquent ORM, Filament Admin Panel, dan deployment.',
                 'price' => 150000.00,
