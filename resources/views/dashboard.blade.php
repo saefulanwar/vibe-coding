@@ -132,11 +132,11 @@
                     <p class="text-xs text-slate-400">Mulailah belajar dari kursus mandiri atau sinkronisasi kelas Moodle Anda.</p>
                 </div>
                 <span class="text-xs font-semibold px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300">
-                    {{ $enrolledBatches->count() }} Terdaftar
+                    {{ $enrolledCourses->count() }} Kursus
                 </span>
             </div>
 
-            @if($enrolledBatches->isEmpty())
+            @if($enrolledCourses->isEmpty())
                 <div class="glass-card rounded-2xl p-8 text-center border-dashed border-slate-700/50">
                     <div class="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-4 border border-slate-700">
                         <svg class="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
@@ -146,8 +146,7 @@
                 </div>
             @else
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    @foreach($enrolledBatches as $batch)
-                        @php $course = $batch->course; @endphp
+                    @foreach($enrolledCourses as $course)
                         <div class="glass-card rounded-2xl overflow-hidden hover:scale-[1.01] transition duration-300 flex flex-col justify-between group">
                             <div>
                                 <a href="{{ route('course.detail', $course->slug) }}" class="relative h-44 w-full bg-slate-800 overflow-hidden block">
@@ -159,7 +158,6 @@
                                             <svg class="w-12 h-12 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                                         </div>
                                     @endif
-                                    <!-- Source Badge -->
                                     <div class="absolute top-3 left-3 flex gap-2">
                                         @if($course->source === 'moodle')
                                             <span class="text-[10px] font-bold tracking-wide uppercase px-2 py-1 rounded bg-amber-500 text-slate-950 shadow-lg">Glacier LMS</span>
@@ -178,61 +176,71 @@
                                             {{ $course->title }}
                                         </a>
                                     </h3>
-                                    <!-- Batch Name Badge -->
-                                    <div class="mt-1.5 flex items-center gap-2">
-                                        <span class="inline-block text-[10px] font-semibold bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded">{{ $batch->name }}</span>
-                                    </div>
                                     <p class="text-xs text-slate-400 mt-2 line-clamp-2">{{ strip_tags($course->description) }}</p>
+
+                                    {{-- Batch list inside course card --}}
+                                    @if($course->enrolledBatches->count() > 0)
+                                        <div class="mt-3 space-y-2">
+                                            <span class="block text-[10px] text-slate-500 font-bold uppercase tracking-wider">Batch Terdaftar</span>
+                                            @foreach($course->enrolledBatches->take(5) as $batch)
+                                                <div class="bg-slate-800/60 border border-slate-700/40 rounded-xl p-3">
+                                                    <div class="flex items-center gap-2 mb-2">
+                                                        <span class="inline-block text-[10px] font-semibold bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded">{{ $batch->name }}</span>
+                                                    </div>
+                                                    @if(now() >= $batch->start_date)
+                                                        <form action="{{ route('courses.learn', $course->id) }}" method="POST">
+                                                            @csrf
+                                                            <button type="submit" class="w-full text-center text-xs font-semibold py-2.5 px-4 rounded-lg bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white glow-hover flex items-center justify-center gap-2">
+                                                                @if($course->source === 'moodle')
+                                                                    <span>Mulai Belajar (SSO Moodle)</span>
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                                                @else
+                                                                    <span>Buka Materi Lokal</span>
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                                                @endif
+                                                            </button>
+                                                        </form>
+                                                    @else
+                                                        <div class="w-full text-center text-xs font-semibold py-2.5 px-4 rounded-lg bg-slate-800/50 border border-slate-700/30 text-slate-400 flex flex-col items-center justify-center gap-1">
+                                                            <div class="flex items-center gap-1.5 text-amber-500">
+                                                                <svg class="w-4 h-4 flex-shrink-0 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m0 0v2m0-2h2m-2 0H10m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                                <span class="font-bold">Belum Dimulai</span>
+                                                            </div>
+                                                            <span class="text-[10px] text-slate-500">Kelas Dimulai Pada: <strong class="text-slate-400 font-medium">{{ $batch->start_date->format('d M Y, H:i') }}</strong></span>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
 
                             <div class="px-6 pb-6 pt-3 border-t border-slate-800/40">
-                                @if(now() >= $batch->start_date)
-                                    <form action="{{ route('courses.learn', $course->id) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="w-full text-center text-xs font-semibold py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white glow-hover flex items-center justify-center gap-2 mb-2">
-                                            @if($course->source === 'moodle')
-                                                <span>Mulai Belajar (SSO Moodle)</span>
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                                            @else
-                                                <span>Buka Materi Lokal</span>
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                            @endif
-                                        </button>
-                                    </form>
-                                     @if(isset($certificates[$course->id]))
-                                        <a href="{{ asset('storage/' . $certificates[$course->id]->file_path) }}" target="_blank" class="w-full text-center text-xs font-semibold py-3 px-4 rounded-xl border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 glow-hover flex items-center justify-center gap-2 mb-2">
-                                            <span>Unduh Sertifikat</span>
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                                        </a>
+                                @if(isset($certificates[$course->id]))
+                                    <a href="{{ asset('storage/' . $certificates[$course->id]->file_path) }}" target="_blank" class="w-full text-center text-xs font-semibold py-3 px-4 rounded-xl border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 glow-hover flex items-center justify-center gap-2 mb-2">
+                                        <span>Unduh Sertifikat</span>
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                    </a>
 
-                                        @php
-                                            $existingReview = \App\Models\CourseReview::where('user_id', Auth::id())->where('course_id', $course->id)->first();
-                                        @endphp
-                                        @if(!$existingReview)
-                                            <button onclick="openReviewModal('{{ $course->id }}', '{{ addslashes($course->title) }}')" class="w-full text-center text-xs font-bold py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 glow-hover flex items-center justify-center gap-2">
-                                                <span>Beri Ulasan</span>
-                                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                            </button>
-                                        @else
-                                            <div class="w-full text-center text-xs font-semibold py-2.5 px-4 rounded-xl bg-slate-800 border border-slate-700 text-amber-400 flex items-center justify-center gap-1.5">
-                                                <span>Rating Anda:</span>
-                                                <div class="flex">
-                                                    @for($i = 1; $i <= 5; $i++)
-                                                        <svg class="w-3.5 h-3.5 {{ $i <= $existingReview->rating ? 'text-amber-400' : 'text-slate-600' }}" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                                    @endfor
-                                                </div>
+                                    @php
+                                        $existingReview = \App\Models\CourseReview::where('user_id', Auth::id())->where('course_id', $course->id)->first();
+                                    @endphp
+                                    @if(!$existingReview)
+                                        <button onclick="openReviewModal('{{ $course->id }}', '{{ addslashes($course->title) }}')" class="w-full text-center text-xs font-bold py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 glow-hover flex items-center justify-center gap-2">
+                                            <span>Beri Ulasan</span>
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                        </button>
+                                    @else
+                                        <div class="w-full text-center text-xs font-semibold py-2.5 px-4 rounded-xl bg-slate-800 border border-slate-700 text-amber-400 flex items-center justify-center gap-1.5">
+                                            <span>Rating Anda:</span>
+                                            <div class="flex">
+                                                @for($i = 1; $i <= 5; $i++)
+                                                    <svg class="w-3.5 h-3.5 {{ $i <= $existingReview->rating ? 'text-amber-400' : 'text-slate-600' }}" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                                @endfor
                                             </div>
-                                        @endif
-                                    @endif
-                                @else
-                                    <div class="w-full text-center text-xs font-semibold py-3 px-4 rounded-xl bg-slate-800/50 border border-slate-700/30 text-slate-400 flex flex-col items-center justify-center gap-1">
-                                        <div class="flex items-center gap-1.5 text-amber-500">
-                                            <svg class="w-4 h-4 flex-shrink-0 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m0 0v2m0-2h2m-2 0H10m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                            <span class="font-bold">Belum Dimulai</span>
                                         </div>
-                                        <span class="text-[10px] text-slate-500">Kelas Dimulai Pada: <strong class="text-slate-400 font-medium">{{ $batch->start_date->format('d M Y, H:i') }}</strong></span>
-                                    </div>
+                                    @endif
                                 @endif
                             </div>
                         </div>
@@ -248,14 +256,13 @@
                 <p class="text-xs text-slate-400">Pilih dari kursus berbayar berkualitas. Dapatkan akses instant menggunakan sistem Direct Checkout.</p>
             </div>
 
-            @if($availableBatches->isEmpty())
+            @if($availableCourses->isEmpty())
                 <div class="glass-card rounded-2xl p-8 text-center border-dashed border-slate-700/50">
                     <p class="text-sm text-slate-500 font-medium">Belum ada kelas baru yang tersedia saat ini.</p>
                 </div>
             @else
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    @foreach($availableBatches as $batch)
-                        @php $course = $batch->course; @endphp
+                    @foreach($availableCourses as $course)
                         <div class="glass-card rounded-2xl overflow-hidden hover:scale-[1.01] transition duration-300 flex flex-col justify-between group">
                             <div>
                                 <a href="{{ route('course.detail', $course->slug) }}" class="relative h-44 w-full bg-slate-800 overflow-hidden block">
@@ -294,53 +301,56 @@
                                             {{ $course->title }}
                                         </a>
                                     </h3>
-                                    <!-- Batch Name Badge -->
-                                    <div class="mt-1.5 flex items-center gap-2">
-                                        <span class="inline-block text-[10px] font-semibold bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded">{{ $batch->name }}</span>
-                                    </div>
 
-                                    <!-- Batch info metrics -->
-                                    <div class="mt-3 space-y-1 bg-slate-950/40 p-2.5 rounded-xl border border-slate-800/60 text-[11px] text-slate-400">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-slate-500">Kuota Terisi:</span>
-                                            <span class="font-semibold text-slate-300">{{ $batch->enrollments_count }} / {{ $batch->quota }} Peserta</span>
-                                        </div>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-slate-500">Batas Pendaftaran:</span>
-                                            <span class="font-semibold text-rose-400">{{ $batch->registration_end_date->format('d M Y') }}</span>
-                                        </div>
-                                    </div>
+                                    <p class="text-xs text-slate-400 mt-2 line-clamp-3">{{ strip_tags($course->description) }}</p>
 
-                                    <p class="text-xs text-slate-400 mt-3 line-clamp-3">{{ strip_tags($course->description) }}</p>
+                                    {{-- Batch list inside course card --}}
+                                    @if($course->batches->count() > 0)
+                                        <div class="mt-3 space-y-2">
+                                            <span class="block text-[10px] text-slate-500 font-bold uppercase tracking-wider">Batch Tersedia</span>
+                                            @foreach($course->batches->take(5) as $batch)
+                                                <div class="bg-slate-950/40 border border-slate-800/60 rounded-xl p-3">
+                                                    <div class="flex items-center justify-between mb-1.5">
+                                                        <span class="text-[10px] font-semibold text-indigo-400">{{ $batch->name }}</span>
+                                                        @if($batch->registration_end_date)
+                                                            <span class="text-[10px] text-rose-400">s/d {{ $batch->registration_end_date->format('d M Y') }}</span>
+                                                        @endif
+                                                    </div>
+                                                    <div class="flex items-center justify-between mb-2 text-[10px] text-slate-500">
+                                                        <span>Kuota: {{ $batch->enrollments_count }} / {{ $batch->quota }}</span>
+                                                    </div>
+                                                    @if($batch->registration_end_date && now() > $batch->registration_end_date)
+                                                        <div class="w-full text-center text-[10px] font-bold py-2 px-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400">
+                                                            Pendaftaran Ditutup
+                                                        </div>
+                                                    @elseif($batch->enrollments_count >= $batch->quota)
+                                                        <div class="w-full text-center text-[10px] font-bold py-2 px-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400">
+                                                            Kuota Penuh
+                                                        </div>
+                                                    @else
+                                                        <form action="{{ route('checkout') }}" method="POST">
+                                                            @csrf
+                                                            <input type="hidden" name="course_batch_id" value="{{ $batch->id }}">
+                                                            @if($course->price == 0)
+                                                                <button type="submit" class="w-full text-center text-[10px] font-bold py-2 px-3 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white glow-hover flex items-center justify-center gap-1.5">
+                                                                    <span>Daftar Gratis</span>
+                                                                </button>
+                                                            @else
+                                                                <button type="submit" class="w-full text-center text-[10px] font-bold py-2 px-3 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white glow-hover flex items-center justify-center gap-1.5">
+                                                                    <span>Beli Sekarang</span>
+                                                                </button>
+                                                            @endif
+                                                        </form>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <div class="mt-3 text-center text-[10px] font-semibold py-2 px-3 rounded-lg bg-slate-800/50 border border-slate-700/30 text-slate-500">
+                                            Belum ada batch tersedia
+                                        </div>
+                                    @endif
                                 </div>
-                            </div>
-
-                            <div class="px-6 pb-6 pt-3 border-t border-slate-800/40">
-                                @if(now() > $batch->registration_end_date)
-                                    <div class="w-full text-center text-xs font-bold py-3 px-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400">
-                                        Pendaftaran Ditutup
-                                    </div>
-                                @elseif($batch->enrollments_count >= $batch->quota)
-                                    <div class="w-full text-center text-xs font-bold py-3 px-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400">
-                                        Kuota Penuh
-                                    </div>
-                                @else
-                                    <form action="{{ route('checkout') }}" method="POST">
-                                        @csrf
-                                        <input type="hidden" name="course_batch_id" value="{{ $batch->id }}">
-                                        @if($course->price == 0)
-                                            <button type="submit" class="w-full text-center text-xs font-bold py-3 px-4 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white glow-hover flex items-center justify-center gap-2">
-                                                <span>Daftar Gratis</span>
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
-                                            </button>
-                                        @else
-                                            <button type="submit" class="w-full text-center text-xs font-bold py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white glow-hover flex items-center justify-center gap-2">
-                                                <span>Beli Sekarang</span>
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                                            </button>
-                                        @endif
-                                    </form>
-                                @endif
                             </div>
                         </div>
                     @endforeach

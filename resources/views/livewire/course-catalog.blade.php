@@ -100,14 +100,14 @@
             </aside>
 
             <div class="w-full lg:w-3/4">
-                @if($this->batches->count() > 0)
+                @if($this->courses->count() > 0)
                     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
-                        @foreach($this->batches as $batch)
+                        @foreach($this->courses as $course)
                             <div class="bg-white rounded-2xl border border-slate-200/70 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-auto group">
                                 
-                                <a href="{{ route('course.detail', $batch->course->slug) }}" class="relative aspect-video w-full bg-slate-100 overflow-hidden flex-shrink-0 block">
-                                    @if($batch->course->thumbnail)
-                                        <img src="{{ $batch->course->thumbnail }}" alt="{{ $batch->course->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                                <a href="{{ route('course.detail', $course->slug) }}" class="relative aspect-video w-full bg-slate-100 overflow-hidden flex-shrink-0 block">
+                                    @if($course->thumbnail)
+                                        <img src="{{ $course->thumbnail }}" alt="{{ $course->title }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                                     @else
                                         <div class="w-full h-full flex items-center justify-center text-slate-400 bg-slate-100">
                                             <svg class="h-8 w-8 stroke-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -116,9 +116,9 @@
                                         </div>
                                     @endif
                                     
-                                    @if($batch->course->unit)
+                                    @if($course->unit)
                                         <div class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-md shadow-sm">
-                                            {{ $batch->course->unit->name }}
+                                            {{ $course->unit->name }}
                                         </div>
                                     @endif
                                 </a>
@@ -126,37 +126,35 @@
                                 <div class="p-5 flex flex-col justify-between flex-grow">
                                     <div>
                                         <div class="flex items-center gap-1.5 mb-2">
-                                            <span class="text-xs font-bold text-amber-500 uppercase tracking-wide">{{ $batch->name }}</span>
-                                            <span class="text-slate-300 text-xs">•</span>
                                             <span class="text-xs text-slate-500">{{ __('Umum') }}</span>
                                         </div>
 
                                         <h3 class="text-base font-bold text-slate-900 mb-1 group-hover:text-sky-600 transition duration-150 leading-snug min-h-[2.75rem] line-clamp-2">
-                                            <a href="{{ route('course.detail', $batch->course->slug) }}" class="hover:underline">
-                                                {{ $batch->course->title }}
+                                            <a href="{{ route('course.detail', $course->slug) }}" class="hover:underline">
+                                                {{ $course->title }}
                                             </a>
                                         </h3>
 
                                         <div class="flex flex-wrap items-center gap-1.5 mb-3">
-                                            @if($batch->course->source === 'local')
+                                            @if($course->source === 'local')
                                                 <span class="inline-flex items-center gap-1 text-[10px] font-bold text-sky-700 bg-sky-50 border border-sky-200/60 px-2 py-0.5 rounded-md shadow-2xs">
                                                     <span class="w-1 h-1 rounded-full bg-sky-500 animate-pulse"></span> {{ __('Aplikasi Glacier') }}
                                                 </span>
-                                            @elseif($batch->course->source === 'moodle')
+                                            @elseif($course->source === 'moodle')
                                                 <span class="inline-flex items-center gap-1 text-[10px] font-bold text-orange-700 bg-orange-50 border border-orange-200/60 px-2 py-0.5 rounded-md shadow-2xs">
                                                     <span class="w-1 h-1 rounded-full bg-orange-500"></span> {{ __('LMS Moodle') }}
                                                 </span>
-                                            @elseif($batch->course->source === 'hybrid')
+                                            @elseif($course->source === 'hybrid')
                                                 <span class="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 rounded-md shadow-2xs">
                                                     <span class="w-1 h-1 rounded-full bg-indigo-500"></span> {{ __('Hybrid Learning') }}
                                                 </span>
                                             @endif
                                         </div>
 
-                                        <div class="text-xs text-slate-500 mb-5 leading-relaxed min-h-[3rem]">
-                                            @if($batch->course->description)
+                                        <div class="text-xs text-slate-500 mb-4 leading-relaxed min-h-[3rem]">
+                                            @if($course->description)
                                                 <div class="line-clamp-3">
-                                                    {!! Str::limit(strip_tags($batch->course->description), 120, '...') !!}
+                                                    {!! Str::limit(strip_tags($course->description), 120, '...') !!}
                                                 </div>
                                             @else
                                                 <div class="line-clamp-3">
@@ -164,7 +162,6 @@
                                                 </div>
                                             @endif
                                             
-                                            <!-- Clean Fallback System footnote for English readers -->
                                             @if(app()->getLocale() == 'en')
                                                 <div class="mt-2 text-[10px] text-slate-400 italic">
                                                     * {{ __('Content only available in Indonesian.') }}
@@ -172,53 +169,84 @@
                                             @endif
                                         </div>
                                     </div>
-                                    
-                                    <div class="pt-4 border-t border-slate-100 flex items-center justify-between gap-2 mt-auto">
-                                        <div>
-                                            <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-none">{{ __('Investasi') }}</span>
-                                            <div class="font-extrabold text-base text-slate-900 mt-1">
-                                                @if($batch->course->price == 0)
-                                                    <span class="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded text-xs border border-emerald-200/50">{{ __('Gratis') }}</span>
+
+                                    {{-- Harga --}}
+                                    <div class="mb-3">
+                                        <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-none">{{ __('Investasi') }}</span>
+                                        <div class="font-extrabold text-base text-slate-900 mt-1">
+                                            @if($course->price == 0)
+                                                <span class="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded text-xs border border-emerald-200/50">{{ __('Gratis') }}</span>
+                                            @else
+                                                @if(app()->getLocale() == 'en')
+                                                    IDR {{ number_format($course->price, 0, '.', ',') }}
                                                 @else
-                                                    @if(app()->getLocale() == 'en')
-                                                        IDR {{ number_format($batch->course->price, 0, '.', ',') }}
-                                                    @else
-                                                        Rp {{ number_format($batch->course->price, 0, ',', '.') }}
-                                                    @endif
+                                                    Rp {{ number_format($course->price, 0, ',', '.') }}
                                                 @endif
+                                            @endif
+                                        </div>
+                                    </div>
+                                    
+                                    {{-- Batch list inside course card --}}
+                                    @if($course->batches->count() > 0)
+                                        <div class="pt-3 border-t border-slate-100 space-y-2">
+                                            <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">{{ __('Batch Tersedia') }}</span>
+                                            @foreach($course->batches->take(5) as $batch)
+                                                <div class="bg-slate-50 border border-slate-200/60 rounded-xl p-3">
+                                                    <div class="flex items-center justify-between mb-2">
+                                                        <span class="text-xs font-bold text-amber-600">{{ $batch->name }}</span>
+                                                        @if($batch->registration_end_date)
+                                                            <span class="text-[10px] text-slate-400">s/d {{ $batch->registration_end_date->format('d M Y') }}</span>
+                                                        @endif
+                                                    </div>
+                                                    @if($batch->registration_end_date && now() > $batch->registration_end_date)
+                                                        <div class="w-full text-center text-xs font-bold py-2 px-4 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600">
+                                                            {{ __('Pendaftaran Ditutup') }}
+                                                        </div>
+                                                    @elseif($batch->quota && $batch->enrollments_count >= $batch->quota)
+                                                        <div class="w-full text-center text-xs font-bold py-2 px-4 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600">
+                                                            {{ __('Kuota Penuh') }}
+                                                        </div>
+                                                    @else
+                                                        @auth
+                                                            @php
+                                                                $isEnrolled = Auth::user()->enrolledBatches->contains($batch->id);
+                                                            @endphp
+
+                                                            @if($isEnrolled)
+                                                                <a href="{{ route('dashboard') }}" class="inline-flex items-center justify-center w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2 rounded-lg transition duration-200 shadow-sm border border-slate-200/80 active:scale-95">
+                                                                    {{ __('Ke Dashboard') }}
+                                                                </a>
+                                                            @else
+                                                                <form action="{{ route('checkout') }}" method="POST" class="inline w-full">
+                                                                    @csrf
+                                                                    <input type="hidden" name="course_batch_id" value="{{ $batch->id }}">
+                                                                    @if($course->price == 0)
+                                                                        <button type="submit" class="inline-flex items-center justify-center w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition duration-200 shadow-md border border-emerald-500/20 active:scale-95">
+                                                                            {{ __('Daftar Gratis') }}
+                                                                        </button>
+                                                                    @else
+                                                                        <button type="submit" class="inline-flex items-center justify-center w-full bg-slate-900 hover:bg-sky-600 text-white text-xs font-bold px-4 py-2 rounded-lg transition duration-200 active:scale-95">
+                                                                            {{ __('Beli Sekarang') }}
+                                                                        </button>
+                                                                    @endif
+                                                                </form>
+                                                            @endif
+                                                        @else
+                                                            <a href="{{ route('login') }}" class="inline-flex items-center justify-center w-full bg-slate-900 hover:bg-sky-600 text-white text-xs font-bold px-4 py-2 rounded-lg transition duration-200">
+                                                                {{ __('Daftar Kelas') }}
+                                                            </a>
+                                                        @endauth
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <div class="pt-3 border-t border-slate-100">
+                                            <div class="bg-amber-50 border border-amber-200/50 text-amber-700 text-[11px] font-semibold p-2.5 rounded-lg text-center">
+                                                {{ __('Belum ada jadwal batch tersedia.') }}
                                             </div>
                                         </div>
-                                        
-                                        @auth
-                                            @php
-                                                $isEnrolled = Auth::user()->enrolledBatches->contains($batch->id);
-                                            @endphp
-
-                                            @if($isEnrolled)
-                                                <a href="{{ route('dashboard') }}" class="inline-flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl transition duration-200 shadow-sm border border-slate-200/80 active:scale-95">
-                                                    {{ __('Ke Dashboard') }}
-                                                </a>
-                                            @else
-                                                <form action="{{ route('checkout') }}" method="POST" class="inline">
-                                                    @csrf
-                                                    <input type="hidden" name="course_batch_id" value="{{ $batch->id }}">
-                                                    @if($batch->course->price == 0)
-                                                        <button type="submit" class="inline-flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition duration-200 shadow-md border border-emerald-500/20 active:scale-95">
-                                                            {{ __('Daftar Gratis') }}
-                                                        </button>
-                                                    @else
-                                                        <button type="submit" class="inline-flex items-center justify-center bg-slate-900 hover:bg-sky-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition duration-200 group-hover:shadow-md active:scale-95">
-                                                            {{ __('Beli Sekarang') }}
-                                                        </button>
-                                                    @endif
-                                                </form>
-                                            @endif
-                                        @else
-                                            <a href="{{ route('login') }}" class="inline-flex items-center justify-center bg-slate-900 hover:bg-sky-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition duration-200 group-hover:shadow-md">
-                                                {{ __('Daftar Kelas') }}
-                                            </a>
-                                        @endauth
-                                    </div>
+                                    @endif
                                 </div>
 
                              </div>
@@ -226,7 +254,7 @@
                     </div>
                     
                     <div class="mt-12 border-t border-slate-200/60 pt-6">
-                        {{ $this->batches->links() }}
+                        {{ $this->courses->links() }}
                     </div>
                 @else
                     <div class="bg-white rounded-2xl border border-slate-200/80 p-12 text-center max-w-md mx-auto shadow-sm">
@@ -296,4 +324,5 @@
             </div>
         </div>
     </div>
+
 </section>

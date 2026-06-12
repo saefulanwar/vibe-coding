@@ -26,19 +26,29 @@ class CourseController extends Controller
     {
         $user = Auth::user();
         
-        // Fetch enrolled batches
+        // Fetch enrolled batches grouped by course
         $enrolledBatches = $user->enrolledBatches()
             ->with(['course.category', 'course.modules.lessons'])
             ->get();
         
-        // Fetch available batches (where user is not enrolled)
+        // Group enrolled batches by course
+        $enrolledCourses = $enrolledBatches->groupBy('course_id')->map(function ($batches) {
+            $course = $batches->first()->course;
+            $course->setRelation('enrolledBatches', $batches);
+            return $course;
+        })->values();
+
+        // Fetch available courses (with open batches where user is not enrolled)
         $enrolledBatchIds = $enrolledBatches->pluck('id')->toArray();
-        $availableBatches = CourseBatch::whereHas('course', function ($query) {
-                $query->where('is_published', true);
-            })
-            ->with(['course.category'])
-            ->withCount('enrollments')
-            ->whereNotIn('id', $enrolledBatchIds)
+        $enrolledCourseIds = $enrolledCourses->pluck('id')->toArray();
+        
+        $availableCourses = Course::where('is_published', true)
+            ->whereNotIn('id', $enrolledCourseIds)
+            ->with(['category', 'batches' => function ($q) use ($enrolledBatchIds) {
+                $q->whereNotIn('id', $enrolledBatchIds)
+                ->withCount('enrollments')
+                ->orderBy('created_at', 'desc');
+            }])
             ->get();
 
         // Fetch user's completed certificates
@@ -47,7 +57,7 @@ class CourseController extends Controller
             ->get()
             ->keyBy('course_id');
 
-        return view('dashboard', compact('enrolledBatches', 'availableBatches', 'certificates'));
+        return view('dashboard', compact('enrolledCourses', 'enrolledBatches', 'availableCourses', 'certificates'));
     }
 
     /**

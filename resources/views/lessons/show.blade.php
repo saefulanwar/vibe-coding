@@ -94,6 +94,8 @@
                                         <!-- Play/Doc Icon -->
                                         @if($lesson->video_url)
                                             <svg class="w-3.5 h-3.5 flex-shrink-0 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        @elseif($lesson->document_url)
+                                            <svg class="w-3.5 h-3.5 flex-shrink-0 opacity-70 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                                         @else
                                             <svg class="w-3.5 h-3.5 flex-shrink-0 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                                         @endif
@@ -136,6 +138,25 @@
                                 Browser Anda tidak mendukung pemutar video HTML5.
                             </video>
                         @endif
+                    </div>
+                </div>
+            @endif
+
+            <!-- PDF Viewer Area -->
+            @if($currentLesson->document_url)
+                <div class="glass-card rounded-3xl overflow-hidden shadow-2xl mb-8 border border-slate-700/30">
+                    <div class="relative w-full aspect-[3/4] md:aspect-video bg-slate-900 flex flex-col">
+                        <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-800/50">
+                            <h3 class="text-white font-semibold text-sm flex items-center gap-2">
+                                <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                Dokumen Materi (PDF)
+                            </h3>
+                            <a href="{{ Storage::disk('public')->url($currentLesson->document_url) }}" target="_blank" class="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1">
+                                Buka penuh di tab baru
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                            </a>
+                        </div>
+                        <iframe src="{{ Storage::disk('public')->url($currentLesson->document_url) }}#toolbar=0" class="w-full flex-grow border-0 min-h-[500px]"></iframe>
                     </div>
                 </div>
             @endif

@@ -152,46 +152,73 @@
                             </div>
 
                             @if($batch)
-                                <div class="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-100">
-                                    <div class="flex items-center gap-2 mb-2">
-                                        <span class="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
-                                        <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">{{ __('Pendaftaran Terbuka') }}</span>
+                                @if($batch->registration_end_date && now() > $batch->registration_end_date)
+                                    <div class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-100">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                                            <span class="text-xs font-bold text-rose-700 uppercase tracking-wide">{{ __('Pendaftaran Ditutup') }}</span>
+                                        </div>
+                                        <p class="text-sm font-semibold text-slate-900">{{ $batch->name }}</p>
+                                        @if($batch->registration_end_date)
+                                            <p class="text-xs text-rose-500 mt-1">{{ __('Tutup pada:') }} {{ $batch->registration_end_date->format('d M Y') }}</p>
+                                        @endif
                                     </div>
-                                    <p class="text-sm font-semibold text-slate-900">{{ $batch->name }}</p>
-                                    @if($batch->registration_end_date)
-                                        <p class="text-xs text-slate-500 mt-1">{{ __('Tutup pada:') }} {{ $batch->registration_end_date->format('d M Y') }}</p>
-                                    @endif
-                                </div>
-
-                                @auth
-                                    @php
-                                        $isEnrolled = Auth::user()->enrolledBatches->contains($batch->id);
-                                    @endphp
-
-                                    @if($isEnrolled)
-                                        <a href="{{ route('dashboard') }}" class="flex items-center justify-center w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3.5 px-4 rounded-xl transition duration-200 border border-slate-300">
-                                            {{ __('Masuk Kelas') }}
-                                        </a>
-                                    @else
-                                        <form action="{{ route('checkout') }}" method="POST" class="w-full">
-                                            @csrf
-                                            <input type="hidden" name="course_batch_id" value="{{ $batch->id }}">
-                                            @if($course->price == 0)
-                                                <button type="submit" class="flex items-center justify-center w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-600/30 transition duration-200 transform hover:-translate-y-0.5 active:translate-y-0">
-                                                    {{ __('Daftar Sekarang (Gratis)') }}
-                                                </button>
-                                            @else
-                                                <button type="submit" class="flex items-center justify-center w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-sky-600/30 transition duration-200 transform hover:-translate-y-0.5 active:translate-y-0">
-                                                    {{ __('Beli Kelas Ini') }}
-                                                </button>
-                                            @endif
-                                        </form>
-                                    @endif
+                                    <div class="w-full text-center text-sm font-bold py-3.5 px-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600">
+                                        {{ __('Pendaftaran Ditutup') }}
+                                    </div>
+                                @elseif($batch->quota && $batch->enrollments_count >= $batch->quota)
+                                    <div class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-100">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                                            <span class="text-xs font-bold text-rose-700 uppercase tracking-wide">{{ __('Kuota Penuh') }}</span>
+                                        </div>
+                                        <p class="text-sm font-semibold text-slate-900">{{ $batch->name }}</p>
+                                    </div>
+                                    <div class="w-full text-center text-sm font-bold py-3.5 px-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600">
+                                        {{ __('Kuota Penuh') }}
+                                    </div>
                                 @else
-                                    <a href="{{ route('login') }}" class="flex items-center justify-center w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-slate-900/30 transition duration-200 transform hover:-translate-y-0.5 active:translate-y-0">
-                                        {{ __('Login untuk Mendaftar') }}
-                                    </a>
-                                @endauth
+                                    <div class="mb-6 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <span class="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
+                                            <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">{{ __('Pendaftaran Terbuka') }}</span>
+                                        </div>
+                                        <p class="text-sm font-semibold text-slate-900">{{ $batch->name }}</p>
+                                        @if($batch->registration_end_date)
+                                            <p class="text-xs text-slate-500 mt-1">{{ __('Tutup pada:') }} {{ $batch->registration_end_date->format('d M Y') }}</p>
+                                        @endif
+                                    </div>
+
+                                    @auth
+                                        @php
+                                            $isEnrolled = Auth::user()->enrolledBatches->contains($batch->id);
+                                        @endphp
+
+                                        @if($isEnrolled)
+                                            <a href="{{ route('dashboard') }}" class="flex items-center justify-center w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3.5 px-4 rounded-xl transition duration-200 border border-slate-300">
+                                                {{ __('Masuk Kelas') }}
+                                            </a>
+                                        @else
+                                            <form action="{{ route('checkout') }}" method="POST" class="w-full">
+                                                @csrf
+                                                <input type="hidden" name="course_batch_id" value="{{ $batch->id }}">
+                                                @if($course->price == 0)
+                                                    <button type="submit" class="flex items-center justify-center w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-600/30 transition duration-200 transform hover:-translate-y-0.5 active:translate-y-0">
+                                                        {{ __('Daftar Sekarang (Gratis)') }}
+                                                    </button>
+                                                @else
+                                                    <button type="submit" class="flex items-center justify-center w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-sky-600/30 transition duration-200 transform hover:-translate-y-0.5 active:translate-y-0">
+                                                        {{ __('Beli Kelas Ini') }}
+                                                    </button>
+                                                @endif
+                                            </form>
+                                        @endif
+                                    @else
+                                        <a href="{{ route('login') }}" class="flex items-center justify-center w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-slate-900/30 transition duration-200 transform hover:-translate-y-0.5 active:translate-y-0">
+                                            {{ __('Login untuk Mendaftar') }}
+                                        </a>
+                                    @endauth
+                                @endif
                             @else
                                 <div class="bg-amber-50 border border-amber-200 text-amber-800 text-sm font-semibold p-4 rounded-xl flex items-center justify-center text-center">
                                     {{ __('Mohon maaf, saat ini belum ada jadwal kelas yang tersedia.') }}
@@ -275,10 +302,20 @@
                                                     <ul class="space-y-3">
                                                         @foreach($module->lessons as $lesson)
                                                             <li class="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors">
-                                                                <svg class="w-5 h-5 text-sky-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                                </svg>
+                                                                @if($lesson->video_url)
+                                                                    <svg class="w-5 h-5 text-sky-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                                    </svg>
+                                                                @elseif($lesson->document_url)
+                                                                    <svg class="w-5 h-5 text-rose-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                                                    </svg>
+                                                                @else
+                                                                    <svg class="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                                    </svg>
+                                                                @endif
                                                                 <div>
                                                                     <p class="text-sm font-semibold text-slate-800">{{ $lesson->title }}</p>
                                                                 </div>

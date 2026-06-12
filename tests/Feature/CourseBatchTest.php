@@ -22,7 +22,10 @@ class CourseBatchTest extends TestCase
     {
         parent::setUp();
 
-        $this->user = User::factory()->create();
+        $this->user = User::factory()->create([
+            'nik' => '1234567890123456',
+            'phone_number' => '081234567890',
+        ]);
         $this->category = Category::create([
             'name' => 'IT & Software',
             'slug' => 'it-software',

@@ -10,6 +10,7 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\FileUpload;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -56,6 +57,14 @@ class ModulesRelationManager extends RelationManager
                         TextInput::make('video_url')
                             ->label('URL Video')
                             ->url()
+                            ->nullable()
+                            ->columnSpan(2),
+                        FileUpload::make('document_url')
+                            ->label('Dokumen Materi (PDF)')
+                            ->disk('public')
+                            ->directory('lessons/documents')
+                            ->acceptedFileTypes(['application/pdf'])
+                            ->maxSize(10240) // 10MB
                             ->nullable()
                             ->columnSpan(2),
                         TextInput::make('sort_order')
