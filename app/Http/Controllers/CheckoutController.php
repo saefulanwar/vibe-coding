@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Enrollment;
 use App\Services\PaymentService;
 use App\Services\EnrollmentService;
+use App\Services\SikuService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -17,11 +18,13 @@ class CheckoutController extends Controller
 {
     protected PaymentService $paymentService;
     protected EnrollmentService $enrollmentService;
+    protected SikuService $sikuService;
 
-    public function __construct(PaymentService $paymentService, EnrollmentService $enrollmentService)
+    public function __construct(PaymentService $paymentService, EnrollmentService $enrollmentService, SikuService $sikuService)
     {
         $this->paymentService = $paymentService;
         $this->enrollmentService = $enrollmentService;
+        $this->sikuService = $sikuService;
     }
 
     /**
@@ -52,9 +55,11 @@ class CheckoutController extends Controller
             return redirect()->back()->with('error', 'Kuota angkatan ini sudah penuh.');
         }
 
-        // Check active enrollment
+        // Check active enrollment in any batch of this course
         $activeEnrollment = Enrollment::where('user_id', $user->id)
-            ->where('course_batch_id', $batch->id)
+            ->whereHas('courseBatch', function ($query) use ($course) {
+                $query->where('course_id', $course->id);
+            })
             ->where(function ($query) {
                 $query->whereNull('expires_at')
                       ->orWhere('expires_at', '>', now());
@@ -62,7 +67,24 @@ class CheckoutController extends Controller
             ->first();
 
         if ($activeEnrollment) {
-            return redirect()->route('dashboard')->with('info', 'Anda sudah terdaftar di angkatan ini.');
+            return redirect()->route('dashboard')->with('info', 'Anda sudah terdaftar di kursus ini.');
+        }
+
+        // Check if there is an active pending order for this course to prevent multiple VA generation
+        $pendingOrder = Order::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->whereHas('courseBatch', function ($query) use ($course) {
+                $query->where('course_id', $course->id)
+                      ->where('registration_end_date', '>', now());
+            })
+            ->first();
+
+        if ($pendingOrder) {
+            session()->flash('info', 'Anda memiliki transaksi pembayaran yang belum diselesaikan untuk kursus ini. Silakan selesaikan pembayaran berikut.');
+            if ($pendingOrder->payment_url) {
+                return redirect()->away($pendingOrder->payment_url);
+            }
+            return redirect()->route('payment.siku', ['reference' => $pendingOrder->reference_number]);
         }
 
         // Create transaction reference number
@@ -149,6 +171,58 @@ class CheckoutController extends Controller
             ]);
 
             return redirect()->route('dashboard')->with('error', 'Pembayaran Disimulasikan GAGAL.');
+        }
+    }
+
+    /**
+     * Show the Siku payment billing details page
+     */
+    public function showSikuPaymentPage($reference)
+    {
+        $order = Order::with(['course', 'user'])->where('reference_number', $reference)->firstOrFail();
+
+        // Extract billing number and invoice URL from gateway response
+        $billingNumber = $order->gateway_response['siku_billing_number'] ?? null;
+        $invoiceUrl = $order->gateway_response['siku_invoice_url'] ?? null;
+
+        return view('payment.siku', compact('order', 'billingNumber', 'invoiceUrl'));
+    }
+
+    /**
+     * Check current Siku payment status and activate course if paid
+     */
+    public function checkSikuPaymentStatus(Request $request, $reference)
+    {
+        $order = Order::with(['course', 'user'])->where('reference_number', $reference)->firstOrFail();
+        $billingNumber = $order->gateway_response['siku_billing_number'] ?? null;
+
+        if (!$billingNumber) {
+            return redirect()->back()->with('error', 'Nomor billing tagihan tidak ditemukan.');
+        }
+
+        try {
+            $statusCheck = $this->sikuService->checkPaymentStatus($billingNumber);
+
+            if ($statusCheck['is_paid']) {
+                $order->update([
+                    'status' => 'paid',
+                    'gateway_response' => array_merge($order->gateway_response ?? [], [
+                        'status' => 'paid',
+                        'checked_at' => now()->toIso8601String(),
+                        'siku_status_response' => $statusCheck['raw_response']
+                    ])
+                ]);
+
+                // Auto-enroll user in course
+                $this->enrollmentService->activateOrderAccess($order);
+
+                return redirect()->route('dashboard')->with('success', 'Pembayaran berhasil dikonfirmasi! Anda sekarang dapat mengakses kursus.');
+            }
+
+            return redirect()->back()->with('info', 'Tagihan belum dibayar. Silakan lakukan pembayaran terlebih dahulu.');
+        } catch (\Exception $e) {
+            Log::error('Siku payment status check error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal memverifikasi status pembayaran ke sistem Siku: ' . $e->getMessage());
         }
     }
 }

@@ -41,12 +41,64 @@ class CourseForm
                             ->options(Category::pluck('name', 'id')->toArray())
                             ->nullable()
                             ->searchable(),
+                        Select::make('unit_id')
+                            ->label('Unit')
+                            ->relationship('unit', 'name')
+                            ->default(fn () => auth()->user()?->hasRole('admin_fakultas') ? auth()->user()->unit_id : null)
+                            ->disabled(fn () => auth()->user()?->hasRole('admin_fakultas'))
+                            ->dehydrated()
+                            ->nullable()
+                            ->searchable()
+                            ->live(),
                         TextInput::make('price')
                             ->label('Harga (IDR)')
                             ->numeric()
                             ->required()
                             ->prefix('Rp')
-                            ->helperText('Masukkan 0 jika kursus ini gratis (tidak berbayar).'),
+                            ->helperText('Masukkan 0 jika kursus ini gratis (tidak berbayar).')
+                            ->live(),
+                        Select::make('ig_id')
+                            ->label('Nama IG')
+                            ->helperText('Pilih Instansi/Group pendapatan SIKU yang sesuai untuk unit ini.')
+                            ->options(function (callable $get) {
+                                $unitId = $get('unit_id') ?? (auth()->user()?->hasRole('admin_fakultas') ? auth()->user()->unit_id : null);
+                                if (!$unitId) {
+                                    return [];
+                                }
+                                
+                                $unit = \App\Models\Unit::find($unitId);
+                                if (!$unit || !$unit->code) {
+                                    return [];
+                                }
+
+                                $sikuService = app(\App\Services\SikuService::class);
+                                return $sikuService->getIgsByUnitCode($unit->code);
+                            })
+                            ->searchable()
+                            ->nullable()
+                            ->visible(fn (callable $get) => (float) $get('price') > 0)
+                            ->required(fn (callable $get) => (float) $get('price') > 0),
+                        Select::make('lokasi_id')
+                            ->label('Lokasi (SIKU)')
+                            ->helperText('Pilih Lokasi pendapatan SIKU yang sesuai untuk unit ini.')
+                            ->options(function (callable $get) {
+                                $unitId = $get('unit_id') ?? (auth()->user()?->hasRole('admin_fakultas') ? auth()->user()->unit_id : null);
+                                if (!$unitId) {
+                                    return [];
+                                }
+                                
+                                $unit = \App\Models\Unit::find($unitId);
+                                if (!$unit || !$unit->code) {
+                                    return [];
+                                }
+
+                                $sikuService = app(\App\Services\SikuService::class);
+                                return $sikuService->getLokasisByUnitCode($unit->code);
+                            })
+                            ->searchable()
+                            ->nullable()
+                            ->visible(fn (callable $get) => (float) $get('price') > 0)
+                            ->required(fn (callable $get) => (float) $get('price') > 0),
                         SpatieMediaLibraryFileUpload::make('thumbnail')
                             ->label('Gambar Thumbnail')
                             ->collection('thumbnail')

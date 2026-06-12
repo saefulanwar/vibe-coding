@@ -42,8 +42,31 @@ return [
     ],
 
     'moodle' => [
-        'url' => env('MOODLE_BASE_URL', 'http://localhost/moodle'),
-        'token' => env('MOODLE_API_TOKEN'),
+        'url' => env('MOODLE_BASE_URL', env('MOODLE_URL', 'http://localhost/moodle')),
+        'token' => env('MOODLE_API_TOKEN', env('MOODLE_TOKEN')),
+    ],
+
+    'siagen' => [
+        'base_url' => env('SIAGEN_BASE_URL', 'https://siagen.uny.ac.id'),
+        'api_key' => env('SIAGEN_API_KEY', 'Lw_oJ3KQomQnh_eT29Ep9Li3ybDpiPrY'),
+        'ttd_id' => env('SIAGEN_TTD_ID', 1),
+        'keamanan_id' => env('SIAGEN_KEAMANAN_ID', 4),
+        'kodesuratid' => env('SIAGEN_KODESURATID', 613),
+        'jenis_surat_id' => env('SIAGEN_JENIS_SURAT_ID', 27),
+        'signer_email' => env('SIAGEN_SIGNER_EMAIL', 'dummy@dummy.com'),
+        'create_at' => env('SIAGEN_CREATE_AT'),
+    ],
+
+    'siku' => [
+        'base_url' => env('SIKU_BASE_URL', 'https://siku.uny.ac.id'),
+        'email' => env('SIKU_EMAIL', 'saefulanwar@uny.ac.id'),
+        'password' => env('SIKU_PASSWORD', '123456'),
+        'app_id' => env('SIKU_APP_ID', 582931),
+        'kategori' => env('SIKU_KATEGORI', 58),
+        'jenis_mitra' => env('SIKU_JENIS_MITRA', 1),
+        'jenis_pendapatan' => env('SIKU_JENIS_PENDAPATAN', 58),
+        'unit' => env('SIKU_UNIT', 'FISHIPOL'),
+        'lokasi' => env('SIKU_LOKASI', 309),
     ],
 
 ];

@@ -34,15 +34,21 @@ Route::group([
     'middleware' => [ 'localeSessionRedirect', 'localizationRedirect', 'localeViewPath' ]
 ], function() {
     Route::get('/', LandingPage::class)->name('home');
+    Route::get('/courses/{slug}', \App\Livewire\CourseDetail::class)->name('course.detail');
 
     // Protected Student Portal routes
     Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', [CourseController::class, 'dashboard'])->name('dashboard');
         Route::get('/courses/{course}/lessons/{lesson}', [CourseController::class, 'showLocalLesson'])->name('lessons.show');
+        Route::post('/courses/{course}/reviews', [CourseController::class, 'storeReview'])->name('courses.reviews.store');
 
         // Simulated sandbox payment gateway views
         Route::get('/payment/mock/{reference}', [CheckoutController::class, 'showMockPaymentPage'])->name('payment.mock');
         Route::post('/payment/mock/{reference}/complete', [CheckoutController::class, 'completeMockPayment'])->name('payment.complete');
+
+        // Siku real/development billing payment views
+        Route::get('/payment/siku/{reference}', [CheckoutController::class, 'showSikuPaymentPage'])->name('payment.siku');
+        Route::post('/payment/siku/{reference}/check', [CheckoutController::class, 'checkSikuPaymentStatus'])->name('payment.siku.check');
 
         // Transaction routes: gated by profile completeness
         Route::middleware([EnsureProfileComplete::class])->group(function () {

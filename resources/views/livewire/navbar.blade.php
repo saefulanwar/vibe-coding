@@ -2,25 +2,36 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <!-- Logo -->
-            <div class="flex-shrink-0 flex items-center">
+           <div class="flex-shrink-0 flex items-center">
                 <a href="{{ route('home') }}" class="flex items-center gap-3 group">
-                    <div class="w-9 h-9 bg-sky-600 rounded-lg flex items-center justify-center shadow-sm group-hover:bg-sky-700 transition flex-shrink-0">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    <div class="w-14 h-14 bg-transparent flex items-center justify-center transition-transform duration-300 group-hover:scale-105 flex-shrink-0 overflow-hidden relative">
+                        
+                        <svg class="w-10 h-10 relative z-10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 4.5L5.5 16.5H8.5L12 4.5Z" fill="#0284C7" />
+                            
+                            <path d="M12 4.5L15 16.5H18.5L12 4.5Z" fill="#075985" />
+                            
+                            <path d="M12 4.5L8.5 16.5H12V4.5Z" fill="#94A3B8" opacity="0.3" />
+                            <path d="M12 4.5L8.5 16.5H12V4.5Z" fill="#E2E8F0" />
+                            
+                            <path d="M12 4.5L12 16.5H15L12 4.5Z" fill="#38BDF8" />
+                            
+                            <path d="M12 4.5L12 16.5H12.4L12 4.5Z" fill="#FFFFFF" fill-opacity="0.9" />
+                            
+                            <path d="M6 18H18" stroke="#64748B" stroke-width="0.75" stroke-linecap="round" opacity="0.4" />
                         </svg>
                     </div>
                     
                     <div class="flex flex-col items-start justify-center">
-                        <span class="font-bold text-lg text-slate-900 tracking-tight leading-none">
+                        <span class="font-bold text-lg text-slate-900 tracking-tight leading-none group-hover:text-sky-600 transition-colors duration-300">
                             <span class="tracking-[0.15em]">GLACIER</span>
                         </span>
-                        <span class="text-[9px] text-sky-600 font-semibold tracking-wider uppercase mt-1 leading-none">
+                        <span class="text-[9px] text-sky-600 font-semibold tracking-wider uppercase mt-1 leading-none group-hover:text-sky-500 transition-colors duration-300">
                             Global Access for Independent Learning
                         </span>
                     </div>
                 </a>
             </div>
-
             <!-- Desktop Menu -->
             <div class="hidden sm:flex sm:items-center sm:space-x-8">
                 <a href="#" class="text-slate-600 hover:text-sky-600 px-3 py-2 rounded-md text-sm font-medium transition">{{ __('Beranda') }}</a>

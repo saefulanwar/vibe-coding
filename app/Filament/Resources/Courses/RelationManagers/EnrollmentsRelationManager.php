@@ -70,6 +70,10 @@ class EnrollmentsRelationManager extends RelationManager
                             $course = $this->getOwnerRecord();
                             if ($course->requires_tte) {
                                 return [
+                                    TextInput::make('email')
+                                        ->label('Email TTE')
+                                        ->default(auth()->user()->email)
+                                        ->required(),
                                     TextInput::make('nik')
                                         ->label('NIK Admin')
                                         ->required(),
@@ -120,7 +124,7 @@ class EnrollmentsRelationManager extends RelationManager
                                 ]);
 
                                 if ($course->requires_tte) {
-                                    ProcessCertificateTteJob::dispatch($certificate, $data['nik'], $encryptedPassphrase);
+                                    ProcessCertificateTteJob::dispatch($certificate, $data['nik'], $encryptedPassphrase, $data['email']);
                                 } else {
                                     // Process without TTE
                                     \App\Jobs\ProcessCertificateJob::dispatch($certificate);

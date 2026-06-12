@@ -12,6 +12,7 @@ use Spatie\Browsershot\Browsershot;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
+use Exception;
 
 class ProcessCertificateTteJob implements ShouldQueue
 {
@@ -20,15 +21,17 @@ class ProcessCertificateTteJob implements ShouldQueue
     public Certificate $certificate;
     public string $nik;
     public string $encryptedPassphrase;
+    public string $email;
 
     /**
      * Create a new job instance.
      */
-    public function __construct(Certificate $certificate, string $nik, string $encryptedPassphrase)
+    public function __construct(Certificate $certificate, string $nik, string $encryptedPassphrase, string $email)
     {
         $this->certificate = $certificate;
         $this->nik = $nik;
         $this->encryptedPassphrase = $encryptedPassphrase;
+        $this->email = $email;
     }
 
     /**
@@ -36,6 +39,7 @@ class ProcessCertificateTteJob implements ShouldQueue
      */
     public function handle(): void
     {
+        $tempPdfPath = null;
         try {
             $this->certificate->update(['status' => 'processing']);
 
@@ -48,11 +52,10 @@ class ProcessCertificateTteJob implements ShouldQueue
             $template = $this->certificate->template;
 
             if (!$template) {
-                throw new \Exception("Certificate template not found.");
+                throw new Exception("Certificate template not found.");
             }
 
             // Encode background image as base64 to ensure 100% reliable local asset loading in headless browser.
-            // Check Spatie Media Library first, then fall back to public/private disks.
             $bgPath = '';
             if ($template->hasMedia('background_image')) {
                 $bgPath = $template->getFirstMediaPath('background_image');
@@ -83,7 +86,34 @@ class ProcessCertificateTteJob implements ShouldQueue
                 $bgBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($bgData);
             }
 
-            // Prepare data for HTML
+            // Initialize SiAgen service
+            $siagenService = app(\App\Services\SiAgenService::class);
+
+            // Step 1: Minta Nomor Surat
+            Log::info("ProcessCertificateTteJob: Requesting document number for certificate: " . $this->certificate->id);
+            try {
+                $nomorData = $siagenService->requestNomorSurat([
+                    'hal' => 'Sertifikat Kelulusan: ' . ($this->certificate->course_title_snapshot ?? $course->title),
+                ]);
+
+                if (isset($nomorData['status']) && $nomorData['status'] === true) {
+                    $this->certificate->update([
+                        'siagen_id' => $nomorData['id'],
+                        'siagen_nomor' => $nomorData['nomor'],
+                        'siagen_manual_url' => $nomorData['url_file'] ?? null,
+                    ]);
+                    Log::info("ProcessCertificateTteJob: Assigned SiAgen ID {$nomorData['id']}, Nomor {$nomorData['nomor']}, Manual URL: " . ($nomorData['url_file'] ?? 'none'));
+                } else {
+                    throw new Exception("SiAgen numbering returned false status.");
+                }
+            } catch (Exception $e) {
+                Log::error("ProcessCertificateTteJob: Failed to request SiAgen number: " . $e->getMessage());
+
+                // Always throw exception for real signature execution
+                throw $e;
+            }
+
+            // Step 2: Generate PDF dengan Nomor Surat
             $data = [
                 'user_name' => $this->certificate->student_name_snapshot ?? $user->name,
                 'course_title' => $this->certificate->course_title_snapshot ?? $course->title,
@@ -93,6 +123,7 @@ class ProcessCertificateTteJob implements ShouldQueue
                 'signer_name' => 'Admin Unit',
                 'signer_position' => 'Kepala Unit',
                 'background_image_base64' => $bgBase64,
+                'siagen_nomor' => $this->certificate->siagen_nomor,
             ];
 
             // Render HTML to PDF Mentah
@@ -113,53 +144,120 @@ class ProcessCertificateTteJob implements ShouldQueue
                 ->landscape()
                 ->save($tempPdfPath);
 
-            // Send to SiAgen UNY
-            $response = Http::withHeaders([
-                'key' => 'Lw_oJ3KQomQnh_eT29Ep9Li3ybDpiPrY',
-            ])->timeout(60)->asMultipart()->post('https://siagen.uny.ac.id/tte-rest/pdf', [
-                'nik' => $this->nik,
-                'passphrase' => $passphrase,
-                'file' => fopen($tempPdfPath, 'r'),
-            ]);
+            $uploadSuccess = false;
+            $uploadUrl = null;
 
-            if ($response->successful()) {
-                $body = $response->body();
+            // Step 3: Upload File Surat ke SiAgen
+            if (!str_starts_with($this->certificate->siagen_id, 'fake_')) {
+                Log::info("ProcessCertificateTteJob: Uploading PDF to SiAgen for ID " . $this->certificate->siagen_id);
+                try {
+                    $uploadResult = $siagenService->uploadFileSurat(
+                        $this->certificate->siagen_id,
+                        $this->certificate->siagen_nomor,
+                        $tempPdfPath
+                    );
 
-                // SiAgen returns HTTP 200 even on errors, with JSON body like {"status":false,"msg":"error nik"}
-                // A valid PDF always starts with %PDF
-                if (!str_starts_with($body, '%PDF')) {
-                    Log::error('SiAgen API returned non-PDF response: ' . $body);
-                    $this->certificate->update(['status' => 'failed']);
-                    return;
+                    if (is_string($uploadResult)) {
+                        $uploadUrl = $uploadResult;
+                        $uploadSuccess = true;
+                        $this->certificate->update([
+                            'siagen_gateway_url' => $uploadUrl
+                        ]);
+                        Log::info("ProcessCertificateTteJob: Document uploaded. Saved Gateway URL: " . $uploadUrl);
+                    } elseif ($uploadResult === true) {
+                        $uploadSuccess = true;
+                    }
+                } catch (Exception $e) {
+                    Log::error("ProcessCertificateTteJob: Upload to SiAgen failed: " . $e->getMessage());
                 }
-
-                // Save signed PDF
-                $finalPdfPath = 'certificates/' . $this->certificate->id . '.pdf';
-                Storage::disk('public')->put($finalPdfPath, $body);
-
-                // Add generated PDF to Spatie Media Library
-                $absolutePath = storage_path('app/public/' . $finalPdfPath);
-                $this->certificate->clearMediaCollection('certificates');
-                $this->certificate->addMedia($absolutePath)
-                    ->toMediaCollection('certificates');
-
-                $this->certificate->update([
-                    'status' => 'completed',
-                    'file_path' => $finalPdfPath,
-                ]);
-            } else {
-                Log::error('SiAgen API Error (HTTP ' . $response->status() . '): ' . $response->body());
-                $this->certificate->update(['status' => 'failed']);
             }
+
+            // Step 4: Eksekusi TTE
+            $tteSuccess = false;
+            if ($uploadSuccess) {
+                Log::info("ProcessCertificateTteJob: Requesting TTE signature execution from SiAgen.");
+                try {
+                    $signerEmail = $this->email;
+                    $tteResult = $siagenService->executeTte(
+                        $this->certificate->siagen_id,
+                        $this->certificate->siagen_nomor,
+                        $signerEmail,
+                        $passphrase,
+                        $this->nik
+                    );
+
+                    if (isset($tteResult['status']) && $tteResult['status'] === true) {
+                        Log::info("ProcessCertificateTteJob: TTE successfully executed.");
+                        $tteSuccess = true;
+                        
+                        // Extract signed PDF URL from TTE response if available
+                        if (!empty($tteResult['file'])) {
+                            $uploadUrl = $tteResult['file'];
+                            Log::info("ProcessCertificateTteJob: Obtained signed PDF URL from TTE response 'file': " . $uploadUrl);
+                        } elseif (!empty($tteResult['url'])) {
+                            $uploadUrl = $tteResult['url'];
+                            Log::info("ProcessCertificateTteJob: Obtained signed PDF URL from TTE response 'url': " . $uploadUrl);
+                        }
+                    } else {
+                        Log::error("ProcessCertificateTteJob: TTE execution failed: " . ($tteResult['message'] ?? 'Unknown error'));
+                    }
+                } catch (Exception $e) {
+                    Log::error("ProcessCertificateTteJob: TTE execution exception: " . $e->getMessage());
+                }
+            }
+
+            // Step 5: Save PDF and Complete
+            $finalPdfPath = 'certificates/' . $this->certificate->id . '.pdf';
+            $absolutePath = storage_path('app/public/' . $finalPdfPath);
+
+            if ($tteSuccess && !empty($uploadUrl)) {
+                // Download the signed PDF from the gateway URL
+                Log::info("ProcessCertificateTteJob: Downloading signed PDF from Gateway URL: " . $uploadUrl);
+                try {
+                    $downloadResponse = Http::timeout(60)->get($uploadUrl);
+                    if ($downloadResponse->successful() && str_starts_with($downloadResponse->body(), '%PDF')) {
+                        Storage::disk('public')->put($finalPdfPath, $downloadResponse->body());
+
+                        // Add signed PDF to Spatie Media Library
+                        $this->certificate->clearMediaCollection('certificates');
+                        $this->certificate->addMedia($absolutePath)->toMediaCollection('certificates');
+
+                        $this->certificate->update([
+                            'status' => 'completed',
+                            'file_path' => $finalPdfPath,
+                        ]);
+
+                        Log::info("ProcessCertificateTteJob: Finished successfully with signed PDF.");
+                        
+                        // Cleanup
+                        if (file_exists($tempPdfPath)) {
+                            unlink($tempPdfPath);
+                        }
+                        return;
+                    } else {
+                        Log::error("ProcessCertificateTteJob: Gateway download did not return a valid PDF.");
+                    }
+                } catch (Exception $e) {
+                    Log::error("ProcessCertificateTteJob: Failed to download signed PDF: " . $e->getMessage());
+                }
+            }
+
+            // Set status to failed if real signature failed
+            $this->certificate->update(['status' => 'failed']);
 
             // Cleanup temp file
             if (file_exists($tempPdfPath)) {
                 unlink($tempPdfPath);
             }
 
-        } catch (\Exception $e) {
-            Log::error('ProcessCertificateTteJob Error: ' . $e->getMessage());
+        } catch (Exception $e) {
+            Log::error('ProcessCertificateTteJob General Error: ' . $e->getMessage());
             $this->certificate->update(['status' => 'failed']);
+            
+            // Cleanup temp file on exception
+            if (!empty($tempPdfPath) && file_exists($tempPdfPath)) {
+                unlink($tempPdfPath);
+            }
         }
     }
 }

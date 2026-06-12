@@ -6,7 +6,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Computed;
-use App\Models\CourseBatch; // Poros utama diubah ke CourseBatch
+use App\Models\Course;
 use App\Models\Unit;
 
 class CourseCatalog extends Component
@@ -39,47 +39,48 @@ class CourseCatalog extends Component
     }
 
     #[Computed]
-    public function batches()
+    public function courses()
     {
-        // Menggunakan join ke table courses agar filtering & sorting data induk menjadi efisien
-        $query = CourseBatch::query()
-            ->join('courses', 'course_batches.course_id', '=', 'courses.id')
-            ->select('course_batches.*') // Mengamankan agar ID yang diambil tetap ID Batch, bukan ID Course
-            ->where('courses.is_published', true)
-            ->with(['course.unit', 'course.category']); // Eager loading relasi
+        // Poros utama diubah ke Course, batch ditampilkan di dalam masing-masing course
+        $query = Course::query()
+            ->where('is_published', true)
+            ->with(['unit', 'category', 'batches' => function ($q) {
+                $q->withCount('enrollments')
+                  ->orderBy('created_at', 'desc');
+            }]);
 
         // Filter: Kata Kunci Judul Kursus (Case-insensitive)
         if (!empty($this->search)) {
-            $query->where('courses.title', 'ilike', '%' . $this->search . '%');
+            $query->where('title', 'ilike', '%' . $this->search . '%');
         }
 
         // Filter: Unit / Fakultas
         if (!empty($this->selectedUnit)) {
-            $query->where('courses.unit_id', $this->selectedUnit);
+            $query->where('unit_id', $this->selectedUnit);
         }
 
         // Filter: Harga Kursus
         if ($this->priceFilter === 'free') {
-            $query->where('courses.price', 0);
+            $query->where('price', 0);
         } elseif ($this->priceFilter === 'paid') {
-            $query->where('courses.price', '>', 0);
+            $query->where('price', '>', 0);
         }
 
         // Filter: Metode Pembelajaran (Source)
         if ($this->deliveryFilter !== 'all') {
-            $query->where('courses.source', $this->deliveryFilter);
+            $query->where('source', $this->deliveryFilter);
         }
 
-        // Pengurutan (Sorting) Data Batch Publik
+        // Pengurutan (Sorting)
         if ($this->sortBy === 'newest') {
-            $query->orderBy('course_batches.created_at', 'desc');
+            $query->orderBy('created_at', 'desc');
         } elseif ($this->sortBy === 'price_asc') {
-            $query->orderBy('courses.price', 'asc');
+            $query->orderBy('price', 'asc');
         } elseif ($this->sortBy === 'price_desc') {
-            $query->orderBy('courses.price', 'desc');
+            $query->orderBy('price', 'desc');
         }
 
-        // Mengembalikan data batch dengan paging (9 batch per halaman)
+        // Mengembalikan data course dengan paging (9 course per halaman)
         return $query->paginate(9);
     }
 

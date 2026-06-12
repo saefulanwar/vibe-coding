@@ -8,11 +8,39 @@ use Illuminate\Support\Facades\Log;
 
 class PaymentService
 {
+    protected SikuService $sikuService;
+
+    public function __construct(SikuService $sikuService)
+    {
+        $this->sikuService = $sikuService;
+    }
+
     /**
      * Request payment URL from payment gateway
      */
     public function createPaymentUrl(Order $order): string
     {
+        // Check if Siku is configured
+        if (config('services.siku.email') && config('services.siku.password')) {
+            try {
+                $sikuOrder = $this->sikuService->createSikuOrder($order);
+                if ($sikuOrder['status']) {
+                    $order->update([
+                        'gateway_response' => array_merge($order->gateway_response ?? [], [
+                            'siku_billing_number' => $sikuOrder['nomor'],
+                            'siku_invoice_url' => $sikuOrder['invoice_url'],
+                            'siku_order_id' => $sikuOrder['siku_order_id'],
+                            'siku_order_number' => $sikuOrder['siku_order_number'],
+                        ])
+                    ]);
+
+                    return route('payment.siku', ['reference' => $order->reference_number]);
+                }
+            } catch (\Exception $e) {
+                Log::error('Siku Order Creation Exception: ' . $e->getMessage());
+            }
+        }
+
         // Check if Midtrans or another gateway is configured
         $merchantId = env('MIDTRANS_MERCHANT_ID');
         $clientKey = env('MIDTRANS_CLIENT_KEY');
